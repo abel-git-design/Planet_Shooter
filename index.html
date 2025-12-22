@@ -1,34 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta charset="UTF-8">
   <title>Planet Shooter</title>
+
+  <!-- Mobile scaling fix -->
+  <meta name="viewport"
+        content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no">
+
   <style>
     body {
       margin: 0;
-      background: rgb(120,120,120);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
       overflow: hidden;
+      background: rgb(120,120,120);
+      touch-action: manipulation;
     }
 
     canvas {
-      background: rgb(120,120,120);
+      display: block;
     }
   </style>
 </head>
 <body>
 
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <canvas id="gameCanvas"></canvas>
 
   <script src="game.js"></script>
-
 </body>
 </html>
-
-
-
-
