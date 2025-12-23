@@ -1,11 +1,34 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+  /* =====================
+     USER IDENTIFICATION
+  ===================== */
+  function getUserId() {
+    let id = localStorage.getItem("planet_user_id");
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem("planet_user_id", id);
+    }
+    return id;
+  }
+
+  const USER_ID = getUserId();
+  const SERVER_URL = "https://YOUR_SERVER_URL/log";
+
+  function sendToServer(event, data) {
+    fetch(SERVER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event, ...data })
+    }).catch(()=>{});
+  }
+
+  /* =====================
+     CANVAS SETUP
+  ===================== */
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
 
-  // =====================
-  // VIRTUAL GAME SPACE
-  // =====================
   const VIRTUAL_WIDTH = 800;
   const VIRTUAL_HEIGHT = 600;
 
@@ -14,10 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
       window.innerWidth / VIRTUAL_WIDTH,
       window.innerHeight / VIRTUAL_HEIGHT
     );
-
     canvas.width = VIRTUAL_WIDTH * scale;
     canvas.height = VIRTUAL_HEIGHT * scale;
-
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
   }
 
@@ -26,9 +47,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const FPS = 60;
 
-  // =====================
-  // COLORS
-  // =====================
+  /* =====================
+     COLORS
+  ===================== */
   const BG_COLOR = [120,120,120];
   const PLANET_LIGHT = "rgb(230,230,230)";
   const PLANET_DARK = "rgb(20,20,20)";
@@ -37,17 +58,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const ENEMY_RADIUS = 100;
 
-  // =====================
-  // CONTRAST MAP
-  // =====================
+  /* =====================
+     CONTRAST MAP
+  ===================== */
   const CONTRAST_MAP = [
     0.00, 0.30, 0.40, 0.50, 0.65,
     0.75, 0.80, 0.85, 0.90, 0.95
   ];
 
-  // =====================
-  // LEVEL DATA
-  // =====================
+  /* =====================
+     LEVEL DATA
+  ===================== */
   const LEVELS = [
     {speed:0.7, balls:1, hits:5},
     {speed:0.7, balls:2, hits:5},
@@ -61,9 +82,9 @@ document.addEventListener("DOMContentLoaded", () => {
     {speed:1.0, balls:4, hits:11}
   ];
 
-  // =====================
-  // BACKGROUND PLANETS
-  // =====================
+  /* =====================
+     BACKGROUND PLANETS
+  ===================== */
   const bgPlanets = [
     [120,120,45,PLANET_LIGHT],
     [680,120,40,PLANET_DARK],
@@ -73,9 +94,9 @@ document.addEventListener("DOMContentLoaded", () => {
     [710,300,30,PLANET_DARK]
   ];
 
-  // =====================
-  // GAME STATE
-  // =====================
+  /* =====================
+     GAME STATE
+  ===================== */
   let levelIndex = 0;
   let enemyAngle = 0;
   let attachedAngles = [];
@@ -89,9 +110,17 @@ document.addEventListener("DOMContentLoaded", () => {
   let stateStartTime = 0;
   let endMessage = "";
 
-  // =====================
-  // HELPERS
-  // =====================
+  /* =====================
+     DATA COLLECTION STATE
+  ===================== */
+  let levelStartTime = 0;
+  let totalErrors = 0;
+  let totalReplays = 0;
+  let sessionStartTime = Date.now();
+
+  /* =====================
+     HELPERS
+  ===================== */
   function amblyopiaColor(base, bg, strength) {
     return `rgb(${base.map((v,i)=>
       Math.round(bg[i] + (v-bg[i])*(1-strength))
@@ -106,7 +135,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function drawBackground() {
     ctx.fillStyle = `rgb(${BG_COLOR.join(",")})`;
     ctx.fillRect(0,0,VIRTUAL_WIDTH,VIRTUAL_HEIGHT);
-
     bgPlanets.forEach(p=>{
       ctx.fillStyle = p[3];
       ctx.beginPath();
@@ -131,12 +159,18 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillRect(0, VIRTUAL_HEIGHT/2 - 90, VIRTUAL_WIDTH, 180);
   }
 
-  // =====================
-  // LEVEL INIT
-  // =====================
+  /* =====================
+     LEVEL INIT
+  ===================== */
   function startLevel() {
     if (levelIndex >= LEVELS.length) {
       gameState = "GAME_COMPLETE";
+      sendToServer("game_complete", {
+        userId: USER_ID,
+        totalErrors,
+        totalReplays,
+        totalTime: Date.now() - sessionStartTime
+      });
       return;
     }
 
@@ -152,14 +186,15 @@ document.addEventListener("DOMContentLoaded", () => {
       attachedAngles.push(i * (360 / lvl.balls));
     }
 
+    levelStartTime = Date.now();
     gameState = "COUNTDOWN";
     stateStartTime = performance.now();
     canShoot = false;
   }
 
-  // =====================
-  // INPUT (DESKTOP)
-  // =====================
+  /* =====================
+     INPUT
+  ===================== */
   document.addEventListener("keydown", e=>{
     if (e.code === "Space" && canShoot && !shooting && gameState==="PLAYING") {
       shooting = true;
@@ -167,9 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // =====================
-  // INPUT (MOBILE)
-  // =====================
   canvas.addEventListener("touchstart", e=>{
     e.preventDefault();
     if (canShoot && !shooting && gameState==="PLAYING") {
@@ -178,9 +210,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }, { passive:false });
 
-  // =====================
-  // GAME LOOP
-  // =====================
+  /* =====================
+     GAME LOOP
+  ===================== */
   function gameLoop() {
     drawBackground();
     const now = performance.now();
@@ -216,7 +248,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const lvl = LEVELS[levelIndex];
     const strength = CONTRAST_MAP[levelIndex];
-
     const enemyColor = amblyopiaColor(BASE_ENEMY_COLOR, BG_COLOR, strength);
     const ballColor = amblyopiaColor(BASE_BALL_COLOR, BG_COLOR, strength);
 
@@ -257,6 +288,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (attachedAngles.some(a=>angleCollision(hitAngle,a))) {
           chances--;
+          totalErrors++;
         } else {
           attachedAngles.push(hitAngle);
           hits++;
@@ -271,9 +303,20 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillText(`Chances: ${chances}`,10,75);
 
     if (chances <= 0) {
+      totalReplays++;
       gameState = "LEVEL_END";
       endMessage = "LEVEL FAILED!";
       canShoot = false;
+
+      sendToServer("level_failed", {
+        userId: USER_ID,
+        level: levelIndex + 1,
+        timeTaken: Date.now() - levelStartTime,
+        totalErrors,
+        totalReplays,
+        chancesUsed: 3
+      });
+
       setTimeout(startLevel,1500);
     }
 
@@ -281,10 +324,37 @@ document.addEventListener("DOMContentLoaded", () => {
       gameState = "LEVEL_END";
       endMessage = "LEVEL COMPLETE!";
       canShoot = false;
+
+      sendToServer("level_complete", {
+        userId: USER_ID,
+        level: levelIndex + 1,
+        timeTaken: Date.now() - levelStartTime,
+        totalErrors,
+        totalReplays,
+        chancesUsed: 3 - chances
+      });
+
       levelIndex++;
       setTimeout(startLevel,1500);
     }
   }
+
+  /* =====================
+     QUIT LOGGING
+  ===================== */
+  window.addEventListener("beforeunload", () => {
+    navigator.sendBeacon(
+      SERVER_URL,
+      JSON.stringify({
+        event: "game_quit",
+        userId: USER_ID,
+        level: levelIndex + 1,
+        totalErrors,
+        totalReplays,
+        timePlayed: Date.now() - sessionStartTime
+      })
+    );
+  });
 
   startLevel();
   setInterval(gameLoop, 1000/FPS);
