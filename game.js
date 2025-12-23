@@ -10,6 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const VIRTUAL_HEIGHT = 600;
 
   function resizeCanvas() {
+    canvas.style.width = window.innerWidth + "px";
+    canvas.style.height = window.innerHeight + "px";
+
     const scale = Math.min(
       window.innerWidth / VIRTUAL_WIDTH,
       window.innerHeight / VIRTUAL_HEIGHT
@@ -62,15 +65,15 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
 
   // =====================
-  // BACKGROUND PLANETS
+  // BACKGROUND PLANETS (MOVED CLOSER)
   // =====================
   const bgPlanets = [
-    [120,120,45,PLANET_LIGHT],
-    [680,120,40,PLANET_DARK],
-    [120,480,35,PLANET_DARK],
-    [680,480,50,PLANET_LIGHT],
-    [90,300,30,PLANET_LIGHT],
-    [710,300,30,PLANET_DARK]
+    [180,160,45,PLANET_LIGHT],
+    [620,160,40,PLANET_DARK],
+    [180,440,35,PLANET_DARK],
+    [620,440,50,PLANET_LIGHT],
+    [140,300,30,PLANET_LIGHT],
+    [660,300,30,PLANET_DARK]
   ];
 
   // =====================
@@ -80,7 +83,10 @@ document.addEventListener("DOMContentLoaded", () => {
   let enemyAngle = 0;
   let attachedAngles = [];
   let shooting = false;
-  let shotY = VIRTUAL_HEIGHT - 50;
+
+  // ⬇ shooting ball moved closer
+  let shotY = VIRTUAL_HEIGHT - 120;
+
   let chances = 3;
   let hits = 0;
   let canShoot = false;
@@ -145,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chances = 3;
     hits = 0;
     shooting = false;
-    shotY = VIRTUAL_HEIGHT - 50;
+    shotY = VIRTUAL_HEIGHT - 120;
 
     attachedAngles = [];
     for (let i=0;i<lvl.balls;i++) {
@@ -158,23 +164,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // =====================
-  // INPUT (DESKTOP)
+  // INPUT
   // =====================
   document.addEventListener("keydown", e=>{
     if (e.code === "Space" && canShoot && !shooting && gameState==="PLAYING") {
       shooting = true;
-      shotY = VIRTUAL_HEIGHT - 50;
+      shotY = VIRTUAL_HEIGHT - 120;
     }
   });
 
-  // =====================
-  // INPUT (MOBILE)
-  // =====================
   canvas.addEventListener("touchstart", e=>{
     e.preventDefault();
     if (canShoot && !shooting && gameState==="PLAYING") {
       shooting = true;
-      shotY = VIRTUAL_HEIGHT - 50;
+      shotY = VIRTUAL_HEIGHT - 120;
     }
   }, { passive:false });
 
@@ -241,7 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!shooting) {
       ctx.beginPath();
-      ctx.arc(VIRTUAL_WIDTH/2, VIRTUAL_HEIGHT-50, 7, 0, Math.PI*2);
+      ctx.arc(VIRTUAL_WIDTH/2, VIRTUAL_HEIGHT-120, 7, 0, Math.PI*2);
       ctx.fill();
     }
 
@@ -289,15 +292,4 @@ document.addEventListener("DOMContentLoaded", () => {
   startLevel();
   setInterval(gameLoop, 1000/FPS);
 });
-
-
-
-
-    
-    
-
-
-
-
-
 
