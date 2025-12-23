@@ -90,6 +90,13 @@ document.addEventListener("DOMContentLoaded", () => {
   let endMessage = "";
 
   // =====================
+  // GAME STATS
+  // =====================
+  const levelStats = [];
+  let totalReplays = 0;
+  let levelStartTime = 0;
+
+  // =====================
   // HELPERS
   // =====================
   function amblyopiaColor(base, bg, strength) {
@@ -132,12 +139,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // =====================
-  // LEVEL INIT
+  // LEVEL INIT (UPDATED)
   // =====================
   function startLevel() {
     if (levelIndex >= LEVELS.length) {
       gameState = "GAME_COMPLETE";
       return;
+    }
+
+    if (gameState === "LEVEL_END" && endMessage === "LEVEL FAILED!") {
+      totalReplays++;
     }
 
     const lvl = LEVELS[levelIndex];
@@ -148,8 +159,12 @@ document.addEventListener("DOMContentLoaded", () => {
     shotY = VIRTUAL_HEIGHT - 50;
 
     attachedAngles = [];
-    for (let i=0;i<lvl.balls;i++) {
+    for (let i = 0; i < lvl.balls; i++) {
       attachedAngles.push(i * (360 / lvl.balls));
+    }
+
+    if (gameState !== "LEVEL_END") {
+      levelStartTime = performance.now(); // Start tracking time only once per level.
     }
 
     gameState = "COUNTDOWN";
@@ -179,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }, { passive:false });
 
   // =====================
-  // GAME LOOP
+  // GAME LOOP (UPDATED)
   // =====================
   function gameLoop() {
     drawBackground();
@@ -189,6 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
       drawCleanOverlay();
       drawCenteredText("ALL LEVELS", 44, -10);
       drawCenteredText("COMPLETED", 44, 40);
+      drawStatsTable();
       return;
     }
 
@@ -220,42 +236,42 @@ document.addEventListener("DOMContentLoaded", () => {
     const enemyColor = amblyopiaColor(BASE_ENEMY_COLOR, BG_COLOR, strength);
     const ballColor = amblyopiaColor(BASE_BALL_COLOR, BG_COLOR, strength);
 
-    enemyAngle = (enemyAngle + (lvl.speed + levelIndex*0.08)) % 360;
+    enemyAngle = (enemyAngle + (lvl.speed + levelIndex * 0.08)) % 360;
 
     ctx.fillStyle = enemyColor;
     ctx.beginPath();
-    ctx.arc(VIRTUAL_WIDTH/2, VIRTUAL_HEIGHT/2, ENEMY_RADIUS, 0, Math.PI*2);
+    ctx.arc(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2, ENEMY_RADIUS, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = ballColor;
-    attachedAngles.forEach(a=>{
-      const r = (a + enemyAngle) * Math.PI/180;
+    attachedAngles.forEach(a => {
+      const r = (a + enemyAngle) * Math.PI / 180;
       ctx.beginPath();
       ctx.arc(
-        VIRTUAL_WIDTH/2 + Math.cos(r)*ENEMY_RADIUS,
-        VIRTUAL_HEIGHT/2 + Math.sin(r)*ENEMY_RADIUS,
-        7,0,Math.PI*2
+        VIRTUAL_WIDTH / 2 + Math.cos(r) * ENEMY_RADIUS,
+        VIRTUAL_HEIGHT / 2 + Math.sin(r) * ENEMY_RADIUS,
+        7, 0, Math.PI * 2
       );
       ctx.fill();
     });
 
     if (!shooting) {
       ctx.beginPath();
-      ctx.arc(VIRTUAL_WIDTH/2, VIRTUAL_HEIGHT-50, 7, 0, Math.PI*2);
+      ctx.arc(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT - 50, 7, 0, Math.PI * 2);
       ctx.fill();
     }
 
     if (shooting) {
       shotY -= 12;
       ctx.beginPath();
-      ctx.arc(VIRTUAL_WIDTH/2, shotY, 7, 0, Math.PI*2);
+      ctx.arc(VIRTUAL_WIDTH / 2, shotY, 7, 0, Math.PI * 2);
       ctx.fill();
 
-      if (shotY <= VIRTUAL_HEIGHT/2 + ENEMY_RADIUS) {
+      if (shotY <= VIRTUAL_HEIGHT / 2 + ENEMY_RADIUS) {
         shooting = false;
         const hitAngle = (90 - enemyAngle + 360) % 360;
 
-        if (attachedAngles.some(a=>angleCollision(hitAngle,a))) {
+        if (attachedAngles.some(a => angleCollision(hitAngle, a))) {
           chances--;
         } else {
           attachedAngles.push(hitAngle);
@@ -266,27 +282,69 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ctx.fillStyle = "black";
     ctx.font = "20px Arial";
-    ctx.fillText(`Level: ${levelIndex+1}/10`,10,25);
-    ctx.fillText(`Score: ${hits*10}`,10,50);
-    ctx.fillText(`Chances: ${chances}`,10,75);
+    ctx.fillText(`Level: ${levelIndex + 1}/10`, 10, 25);
+    ctx.fillText(`Score: ${hits * 10}`, 10, 50);
+    ctx.fillText(`Chances: ${chances}`, 10, 75);
 
     if (chances <= 0) {
       gameState = "LEVEL_END";
       endMessage = "LEVEL FAILED!";
       canShoot = false;
-      setTimeout(startLevel,1500);
+      setTimeout(startLevel, 1500);
     }
 
     if (hits >= lvl.hits) {
+      const levelTime = Math.round((now - levelStartTime) / 1000); // Include all time spent in replays and chances.
+      levelStats.push({
+        level: levelIndex + 1,
+        time: levelTime,
+        chancesUsed: 3 - chances,
+        replays: totalReplays
+      });
+
       gameState = "LEVEL_END";
       endMessage = "LEVEL COMPLETE!";
       canShoot = false;
       levelIndex++;
-      setTimeout(startLevel,1500);
+      setTimeout(startLevel, 1500);
     }
+  }
+
+  // =====================
+  // DRAW STATS TABLE
+  // =====================
+  function drawStatsTable() {
+    const totalStats = levelStats.reduce((acc, stat) => {
+      acc.totalTime += stat.time;
+      acc.totalChances += stat.chancesUsed;
+      acc.totalReplays += stat.replays;
+      return acc;
+    }, { totalTime: 0, totalChances: 0, totalReplays: 0 });
+
+    ctx.fillStyle = "white";
+    ctx.fillRect(50, 50, VIRTUAL_WIDTH - 100, VIRTUAL_HEIGHT - 100);
+
+    ctx.fillStyle = "black";
+    ctx.font = "20px Arial";
+    ctx.fillText("Level", 100, 100);
+    ctx.fillText("Time (s)", 200, 100);
+    ctx.fillText("Chances Used", 300, 100);
+    ctx.fillText("Replays", 450, 100);
+
+    levelStats.forEach((stat, index) => {
+      const y = 130 + index * 30;
+      ctx.fillText(stat.level, 100, y);
+      ctx.fillText(stat.time, 200, y);
+      ctx.fillText(stat.chancesUsed, 300, y);
+      ctx.fillText(stat.replays, 450, y);
+    });
+
+    ctx.fillText("Summary:", 100, VIRTUAL_HEIGHT - 150);
+    ctx.fillText(`Total Time: ${totalStats.totalTime}s`, 100, VIRTUAL_HEIGHT - 120);
+    ctx.fillText(`Total Chances: ${totalStats.totalChances}`, 100, VIRTUAL_HEIGHT - 90);
+    ctx.fillText(`Total Replays: ${totalStats.totalReplays}`, 100, VIRTUAL_HEIGHT - 60);
   }
 
   startLevel();
   setInterval(gameLoop, 1000/FPS);
 });
-
