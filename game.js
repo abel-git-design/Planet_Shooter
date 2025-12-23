@@ -3,17 +3,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
 
-  let WIDTH = window.innerWidth;
-  let HEIGHT = window.innerHeight;
-  canvas.width = WIDTH;
-  canvas.height = HEIGHT;
+  // =====================
+  // VIRTUAL GAME SPACE
+  // =====================
+  const VIRTUAL_WIDTH = 800;
+  const VIRTUAL_HEIGHT = 600;
 
-  window.addEventListener("resize", () => {
-    WIDTH = window.innerWidth;
-    HEIGHT = window.innerHeight;
-    canvas.width = WIDTH;
-    canvas.height = HEIGHT;
-  });
+  function resizeCanvas() {
+    const scale = Math.min(
+      window.innerWidth / VIRTUAL_WIDTH,
+      window.innerHeight / VIRTUAL_HEIGHT
+    );
+
+    canvas.width = VIRTUAL_WIDTH * scale;
+    canvas.height = VIRTUAL_HEIGHT * scale;
+
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  }
+
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
 
   const FPS = 60;
 
@@ -57,11 +66,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // =====================
   const bgPlanets = [
     [120,120,45,PLANET_LIGHT],
-    [WIDTH-120,120,40,PLANET_DARK],
-    [120,HEIGHT-120,35,PLANET_DARK],
-    [WIDTH-120,HEIGHT-120,50,PLANET_LIGHT],
-    [90,HEIGHT/2,30,PLANET_LIGHT],
-    [WIDTH-90,HEIGHT/2,30,PLANET_DARK]
+    [680,120,40,PLANET_DARK],
+    [120,480,35,PLANET_DARK],
+    [680,480,50,PLANET_LIGHT],
+    [90,300,30,PLANET_LIGHT],
+    [710,300,30,PLANET_DARK]
   ];
 
   // =====================
@@ -71,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let enemyAngle = 0;
   let attachedAngles = [];
   let shooting = false;
-  let shotY = HEIGHT - 50;
+  let shotY = VIRTUAL_HEIGHT - 50;
   let chances = 3;
   let hits = 0;
   let canShoot = false;
@@ -96,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function drawBackground() {
     ctx.fillStyle = `rgb(${BG_COLOR.join(",")})`;
-    ctx.fillRect(0,0,WIDTH,HEIGHT);
+    ctx.fillRect(0,0,VIRTUAL_WIDTH,VIRTUAL_HEIGHT);
 
     bgPlanets.forEach(p=>{
       ctx.fillStyle = p[3];
@@ -110,15 +119,16 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillStyle = "black";
     ctx.font = `${size}px Arial`;
     const m = ctx.measureText(txt);
-    ctx.fillText(txt, WIDTH/2 - m.width/2, HEIGHT/2 + yOffset);
+    ctx.fillText(
+      txt,
+      VIRTUAL_WIDTH/2 - m.width/2,
+      VIRTUAL_HEIGHT/2 + yOffset
+    );
   }
 
-  function drawCleanEndScreen() {
-    ctx.fillStyle = `rgb(${BG_COLOR.join(",")})`;
-    ctx.fillRect(0,0,WIDTH,HEIGHT);
-
+  function drawCleanOverlay() {
     ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.fillRect(0, HEIGHT/2 - 80, WIDTH, 160);
+    ctx.fillRect(0, VIRTUAL_HEIGHT/2 - 90, VIRTUAL_WIDTH, 180);
   }
 
   // =====================
@@ -135,7 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chances = 3;
     hits = 0;
     shooting = false;
-    shotY = HEIGHT - 50;
+    shotY = VIRTUAL_HEIGHT - 50;
 
     attachedAngles = [];
     for (let i=0;i<lvl.balls;i++) {
@@ -153,7 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("keydown", e=>{
     if (e.code === "Space" && canShoot && !shooting && gameState==="PLAYING") {
       shooting = true;
-      shotY = HEIGHT - 50;
+      shotY = VIRTUAL_HEIGHT - 50;
     }
   });
 
@@ -164,7 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     if (canShoot && !shooting && gameState==="PLAYING") {
       shooting = true;
-      shotY = HEIGHT - 50;
+      shotY = VIRTUAL_HEIGHT - 50;
     }
   }, { passive:false });
 
@@ -176,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const now = performance.now();
 
     if (gameState === "GAME_COMPLETE") {
-      drawCleanEndScreen();
+      drawCleanOverlay();
       drawCenteredText("ALL LEVELS", 44, -10);
       drawCenteredText("COMPLETED", 44, 40);
       return;
@@ -199,6 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (gameState === "LEVEL_END") {
+      drawCleanOverlay();
       drawCenteredText(endMessage);
       return;
     }
@@ -213,32 +224,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ctx.fillStyle = enemyColor;
     ctx.beginPath();
-    ctx.arc(WIDTH/2, HEIGHT/2, ENEMY_RADIUS, 0, Math.PI*2);
+    ctx.arc(VIRTUAL_WIDTH/2, VIRTUAL_HEIGHT/2, ENEMY_RADIUS, 0, Math.PI*2);
     ctx.fill();
 
     ctx.fillStyle = ballColor;
     attachedAngles.forEach(a=>{
       const r = (a + enemyAngle) * Math.PI/180;
       ctx.beginPath();
-      ctx.arc(WIDTH/2 + Math.cos(r)*ENEMY_RADIUS,
-              HEIGHT/2 + Math.sin(r)*ENEMY_RADIUS,
-              7,0,Math.PI*2);
+      ctx.arc(
+        VIRTUAL_WIDTH/2 + Math.cos(r)*ENEMY_RADIUS,
+        VIRTUAL_HEIGHT/2 + Math.sin(r)*ENEMY_RADIUS,
+        7,0,Math.PI*2
+      );
       ctx.fill();
     });
 
     if (!shooting) {
       ctx.beginPath();
-      ctx.arc(WIDTH/2, HEIGHT-50, 7, 0, Math.PI*2);
+      ctx.arc(VIRTUAL_WIDTH/2, VIRTUAL_HEIGHT-50, 7, 0, Math.PI*2);
       ctx.fill();
     }
 
     if (shooting) {
       shotY -= 12;
       ctx.beginPath();
-      ctx.arc(WIDTH/2, shotY, 7, 0, Math.PI*2);
+      ctx.arc(VIRTUAL_WIDTH/2, shotY, 7, 0, Math.PI*2);
       ctx.fill();
 
-      if (shotY <= HEIGHT/2 + ENEMY_RADIUS) {
+      if (shotY <= VIRTUAL_HEIGHT/2 + ENEMY_RADIUS) {
         shooting = false;
         const hitAngle = (90 - enemyAngle + 360) % 360;
 
@@ -279,8 +292,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+
     
     
+
 
 
 
