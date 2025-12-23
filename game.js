@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const USER_ID = getUserId();
-  const SERVER_URL = "https://YOUR_SERVER_URL/log";
+  const SERVER_URL = "http://localhost:3000/log";
 
   function sendToServer(event, data) {
     fetch(SERVER_URL, {
@@ -359,4 +359,5 @@ document.addEventListener("DOMContentLoaded", () => {
   startLevel();
   setInterval(gameLoop, 1000/FPS);
 });
+
 
