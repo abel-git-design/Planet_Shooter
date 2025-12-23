@@ -17,7 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const sw = window.innerWidth;
     const sh = window.innerHeight;
 
-    scale = Math.max(sw / VW, sh / VH);
+    // ✅ FIT (no crop, no squeeze)
+    scale = Math.min(sw / VW, sh / VH);
 
     canvas.width = sw;
     canvas.height = sh;
@@ -61,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
 
   // =====================
-  // BACKGROUND PLANETS (closer, balanced)
+  // BACKGROUND PLANETS
   // =====================
   const bgPlanets = [
     [180,150,45,PLANET_LIGHT],
@@ -101,10 +102,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function drawBackground() {
+    // Fill entire screen (letterbox included)
+    ctx.save();
+    ctx.setTransform(1,0,0,1,0,0);
     ctx.fillStyle = `rgb(${BG_COLOR.join(",")})`;
-    ctx.fillRect(-offsetX/scale, -offsetY/scale,
-                 canvas.width/scale, canvas.height/scale);
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.restore();
 
+    // Draw game background
     bgPlanets.forEach(p=>{
       ctx.fillStyle = p[3];
       ctx.beginPath();
@@ -151,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // =====================
-  // INPUT (desktop + mobile)
+  // INPUT
   // =====================
   function fire() {
     if (canShoot && !shooting && gameState==="PLAYING") {
@@ -263,4 +268,6 @@ document.addEventListener("DOMContentLoaded", () => {
   startLevel();
   loop();
 });
+
+
 
