@@ -4,10 +4,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const ctx = canvas.getContext("2d");
 
   /* =====================
-     VIRTUAL WORLD
+     BASE GAME SIZE
   ===================== */
-  const VW = 800;
-  const VH = 600;
+  const WIDTH = 800;
+  const HEIGHT = 600;
+  const FPS = 60;
 
   let scale = 1;
   let offsetX = 0;
@@ -20,23 +21,36 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.width = sw;
     canvas.height = sh;
 
-    scale = Math.min(sw / VW, sh / VH);
-
-    // ✅ PERFECT CENTERING (FIXES LEFT SHIFT)
-    offsetX = Math.round((sw - VW * scale) / 2);
-    offsetY = Math.round((sh - VH * scale) / 2);
+    scale = Math.min(sw / WIDTH, sh / HEIGHT);
+    offsetX = (sw - WIDTH * scale) / 2;
+    offsetY = (sh - HEIGHT * scale) / 2;
   }
 
   window.addEventListener("resize", resizeCanvas);
   resizeCanvas();
 
   /* =====================
-     CONSTANTS
+     COLORS (RESTORED)
   ===================== */
-  const BG_COLOR = "rgb(120,120,120)";
-  const ENEMY_RADIUS = 100;
-  const FPS = 60;
+  const BG_COLOR = [120,120,120];
+  const PLANET_LIGHT = "rgb(230,230,230)";
+  const PLANET_DARK = "rgb(20,20,20)";
+  const BASE_ENEMY_COLOR = [150,150,150];
+  const BASE_BALL_COLOR = [200,200,200];
 
+  const ENEMY_RADIUS = 100;
+
+  /* =====================
+     CONTRAST MAP (RESTORED)
+  ===================== */
+  const CONTRAST_MAP = [
+    0.00, 0.20, 0.40, 0.50, 0.60,
+    0.70, 0.70, 0.85, 0.85, 0.90
+  ];
+
+  /* =====================
+     LEVEL DATA (RESTORED)
+  ===================== */
   const LEVELS = [
     {speed:0.7, balls:1, hits:5},
     {speed:0.7, balls:2, hits:5},
@@ -51,35 +65,16 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
 
   /* =====================
-     BACKGROUND (SCREEN SPACE)
+     BACKGROUND PLANETS (RESTORED)
   ===================== */
   const bgPlanets = [
-    [0.20,0.25,45],
-    [0.80,0.25,40],
-    [0.20,0.75,35],
-    [0.80,0.75,50],
-    [0.50,0.12,30],
-    [0.50,0.88,30]
+    [120,120,45,PLANET_LIGHT],
+    [680,120,40,PLANET_DARK],
+    [120,480,35,PLANET_DARK],
+    [680,480,50,PLANET_LIGHT],
+    [90,300,30,PLANET_LIGHT],
+    [710,300,30,PLANET_DARK]
   ];
-
-  function drawBackground() {
-    ctx.setTransform(1,0,0,1,0,0);
-
-    ctx.fillStyle = BG_COLOR;
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-
-    ctx.fillStyle = "rgb(200,200,200)";
-    bgPlanets.forEach(p=>{
-      ctx.beginPath();
-      ctx.arc(
-        canvas.width * p[0],
-        canvas.height * p[1],
-        p[2],
-        0, Math.PI*2
-      );
-      ctx.fill();
-    });
-  }
 
   /* =====================
      GAME STATE
@@ -88,20 +83,39 @@ document.addEventListener("DOMContentLoaded", () => {
   let enemyAngle = 0;
   let attachedAngles = [];
   let shooting = false;
-  let shotY = VH - 90;
+  let shotY = HEIGHT - 50;
   let chances = 3;
   let hits = 0;
+  let canShoot = false;
 
   let gameState = "COUNTDOWN";
-  let stateStart = performance.now();
-  let canShoot = false;
+  let stateStartTime = 0;
+  let endMessage = "";
 
   /* =====================
      HELPERS
   ===================== */
+  function amblyopiaColor(base, bg, strength) {
+    return `rgb(${base.map((v,i)=>
+      Math.round(bg[i] + (v - bg[i]) * (1 - strength))
+    ).join(",")})`;
+  }
+
   function angleCollision(a1, a2) {
     let diff = Math.abs(a1 - a2) % 360;
     return diff < 14 || diff > 346;
+  }
+
+  function drawBackground() {
+    ctx.fillStyle = `rgb(${BG_COLOR.join(",")})`;
+    ctx.fillRect(0,0,WIDTH,HEIGHT);
+
+    bgPlanets.forEach(p=>{
+      ctx.fillStyle = p[3];
+      ctx.beginPath();
+      ctx.arc(p[0],p[1],p[2],0,Math.PI*2);
+      ctx.fill();
+    });
   }
 
   function drawCenteredText(txt, size=48, yOffset=0) {
@@ -110,11 +124,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const m = ctx.measureText(txt);
     ctx.fillText(
       txt,
-      VW/2 - m.width/2,
-      VH/2 + size/2 + yOffset
+      WIDTH/2 - m.width/2,
+      HEIGHT/2 + size/2 + yOffset
     );
   }
 
+  /* =====================
+     LEVEL INIT
+  ===================== */
   function startLevel() {
     if (levelIndex >= LEVELS.length) {
       gameState = "GAME_COMPLETE";
@@ -123,18 +140,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const lvl = LEVELS[levelIndex];
     enemyAngle = 0;
-    attachedAngles = [];
-    shooting = false;
-    shotY = VH - 90;
     chances = 3;
     hits = 0;
+    shooting = false;
+    shotY = HEIGHT - 50;
 
+    attachedAngles = [];
     for (let i=0;i<lvl.balls;i++) {
       attachedAngles.push(i * (360 / lvl.balls));
     }
 
     gameState = "COUNTDOWN";
-    stateStart = performance.now();
+    stateStartTime = performance.now();
     canShoot = false;
   }
 
@@ -144,23 +161,23 @@ document.addEventListener("DOMContentLoaded", () => {
   function fire() {
     if (canShoot && !shooting && gameState === "PLAYING") {
       shooting = true;
-      shotY = VH - 90;
+      shotY = HEIGHT - 50;
     }
   }
 
-  canvas.addEventListener("pointerdown", fire);
   document.addEventListener("keydown", e=>{
     if (e.code === "Space") fire();
   });
 
+  canvas.addEventListener("pointerdown", fire);
+
   /* =====================
-     MAIN LOOP
+     GAME LOOP
   ===================== */
   function gameLoop() {
 
-    drawBackground();
-
     ctx.setTransform(scale,0,0,scale,offsetX,offsetY);
+    drawBackground();
 
     const now = performance.now();
 
@@ -171,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (gameState === "COUNTDOWN") {
-      const t = now - stateStart;
+      const t = now - stateStartTime;
       let txt =
         t < 800  ? "3" :
         t < 1600 ? "2" :
@@ -187,24 +204,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const lvl = LEVELS[levelIndex];
+    const strength = CONTRAST_MAP[levelIndex];
 
-    enemyAngle = (enemyAngle + lvl.speed) % 360;
+    const enemyColor = amblyopiaColor(BASE_ENEMY_COLOR, BG_COLOR, strength);
+    const ballColor = amblyopiaColor(BASE_BALL_COLOR, BG_COLOR, strength);
+
+    enemyAngle = (enemyAngle + lvl.speed + levelIndex * 0.08) % 360;
 
     // Enemy planet
-    ctx.fillStyle = "rgb(60,60,60)";
+    ctx.fillStyle = enemyColor;
     ctx.beginPath();
-    ctx.arc(VW/2, VH/2, ENEMY_RADIUS, 0, Math.PI*2);
+    ctx.arc(WIDTH/2, HEIGHT/2, ENEMY_RADIUS, 0, Math.PI*2);
     ctx.fill();
 
     // Attached balls
-    ctx.fillStyle = "rgb(230,230,230)";
     attachedAngles.forEach(a=>{
       const r = (a + enemyAngle) * Math.PI/180;
+      ctx.fillStyle = ballColor;
       ctx.beginPath();
       ctx.arc(
-        VW/2 + Math.cos(r)*ENEMY_RADIUS,
-        VH/2 + Math.sin(r)*ENEMY_RADIUS,
-        7, 0, Math.PI*2
+        WIDTH/2 + Math.cos(r)*ENEMY_RADIUS,
+        HEIGHT/2 + Math.sin(r)*ENEMY_RADIUS,
+        7,0,Math.PI*2
       );
       ctx.fill();
     });
@@ -212,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Loaded ball
     if (!shooting) {
       ctx.beginPath();
-      ctx.arc(VW/2, VH-90, 7, 0, Math.PI*2);
+      ctx.arc(WIDTH/2, HEIGHT-50, 7,0,Math.PI*2);
       ctx.fill();
     }
 
@@ -220,10 +241,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (shooting) {
       shotY -= 12;
       ctx.beginPath();
-      ctx.arc(VW/2, shotY, 7, 0, Math.PI*2);
+      ctx.arc(WIDTH/2, shotY, 7,0,Math.PI*2);
       ctx.fill();
 
-      if (shotY <= VH/2 + ENEMY_RADIUS) {
+      if (shotY <= HEIGHT/2 + ENEMY_RADIUS) {
         shooting = false;
         const hitAngle = (90 - enemyAngle + 360) % 360;
 
@@ -238,28 +259,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // HUD
     ctx.fillStyle = "black";
-    ctx.font = "18px Arial";
-    ctx.fillText(`Level ${levelIndex+1}/10`, 15, 25);
-    ctx.fillText(`Score ${hits*10}`, 15, 45);
-    ctx.fillText(`Chances ${chances}`, 15, 65);
+    ctx.font = "20px Arial";
+    ctx.fillText(`Level: ${levelIndex+1}/10`,10,25);
+    ctx.fillText(`Score: ${hits*10}`,10,50);
+    ctx.fillText(`Chances: ${chances}`,10,75);
 
-    // Fail
     if (chances <= 0) {
       gameState = "COUNTDOWN";
-      stateStart = performance.now();
       startLevel();
     }
 
-    // Win
     if (hits >= lvl.hits) {
       levelIndex++;
       startLevel();
     }
-
-    requestAnimationFrame(gameLoop);
   }
 
   startLevel();
-  gameLoop();
+  setInterval(gameLoop, 1000/FPS);
 });
 
