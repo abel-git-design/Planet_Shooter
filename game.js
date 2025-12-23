@@ -12,17 +12,23 @@ document.addEventListener("DOMContentLoaded", () => {
   let scale = 1;
   let offsetX = 0;
   let offsetY = 0;
+  let dpr = window.devicePixelRatio || 1;
 
   function resizeCanvas() {
     const sw = window.innerWidth;
     const sh = window.innerHeight;
 
-    canvas.width = sw;
-    canvas.height = sh;
+    canvas.style.width = sw + "px";
+    canvas.style.height = sh + "px";
 
-    // ✅ FIT (NO CROP, NO ZOOM)
+    canvas.width  = sw * dpr;
+    canvas.height = sh * dpr;
+
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(dpr, dpr);
+
+    // FIT (no zoom, no crop)
     scale = Math.min(sw / VW, sh / VH);
-
     offsetX = (sw - VW * scale) / 2;
     offsetY = (sh - VH * scale) / 2;
   }
@@ -31,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
   resizeCanvas();
 
   /* =====================
-     CONSTANTS
+     CONSTANTS (UNCHANGED)
   ===================== */
   const BG_COLOR = "rgb(120,120,120)";
   const ENEMY_RADIUS = 100;
@@ -60,14 +66,14 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.setTransform(1,0,0,1,0,0);
 
     ctx.fillStyle = BG_COLOR;
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillRect(0,0,canvas.width / dpr,canvas.height / dpr);
 
     ctx.fillStyle = "rgb(200,200,200)";
     bgPlanets.forEach(p=>{
       ctx.beginPath();
       ctx.arc(
-        canvas.width  * p[0],
-        canvas.height * p[1],
+        (canvas.width / dpr)  * p[0],
+        (canvas.height / dpr) * p[1],
         p[2],
         0, Math.PI*2
       );
@@ -76,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* =====================
-     GAME STATE
+     GAME STATE (UNCHANGED)
   ===================== */
   let level = 0;
   let enemyAngle = 0;
@@ -87,16 +93,19 @@ document.addEventListener("DOMContentLoaded", () => {
   let hits = 0;
 
   /* =====================
-     INPUT
+     INPUT (FIXED FOR MOBILE)
   ===================== */
-  function fire() {
+  function fire(e) {
+    if (e) e.preventDefault();
     if (!shooting) {
       shooting = true;
       shotY = VH - 90;
     }
   }
 
-  canvas.addEventListener("pointerdown", fire);
+  canvas.addEventListener("pointerdown", fire, { passive:false });
+  canvas.addEventListener("touchstart", fire, { passive:false });
+
   document.addEventListener("keydown", e=>{
     if (e.code==="Space") fire();
   });
@@ -110,7 +119,11 @@ document.addEventListener("DOMContentLoaded", () => {
     drawScreenBackground();
 
     /* ---- WORLD SPACE ---- */
-    ctx.setTransform(scale,0,0,scale,offsetX,offsetY);
+    ctx.setTransform(
+      scale, 0,
+      0, scale,
+      offsetX, offsetY
+    );
 
     const lvl = LEVELS[level];
     enemyAngle = (enemyAngle + lvl.speed) % 360;
