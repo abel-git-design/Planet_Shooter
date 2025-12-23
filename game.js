@@ -89,6 +89,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let stateStartTime = 0;
   let endMessage = "";
 
+  // Track if the next startLevel is a replay or a new level
+  let isReplay = false;
+
   // =====================
   // GAME STATS
   // =====================
@@ -149,6 +152,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (gameState === "LEVEL_END" && endMessage === "LEVEL FAILED!") {
       totalReplays++;
+      isReplay = true;
+    } else {
+      isReplay = false;
     }
 
     const lvl = LEVELS[levelIndex];
@@ -163,8 +169,10 @@ document.addEventListener("DOMContentLoaded", () => {
       attachedAngles.push(i * (360 / lvl.balls));
     }
 
-    if (gameState !== "LEVEL_END") {
-      levelStartTime = performance.now(); // Start tracking time only once per level.
+    // Only set levelStartTime if this is a new level, not a replay
+    if (!isReplay) {
+      levelStartTime = performance.now();
+      totalReplays = 0; // Reset replays for the new level
     }
 
     gameState = "COUNTDOWN";
@@ -294,14 +302,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (hits >= lvl.hits) {
-      const levelTime = Math.round((now - levelStartTime) / 1000); // Include all time spent in replays and chances.
+      const levelTime = Math.round((performance.now() - levelStartTime) / 1000); // Use performance.now() for accuracy
       levelStats.push({
         level: levelIndex + 1,
         time: levelTime,
         chancesUsed: 3 - chances,
         replays: totalReplays
       });
-
       gameState = "LEVEL_END";
       endMessage = "LEVEL COMPLETE!";
       canShoot = false;
@@ -311,13 +318,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // =====================
-  // DRAW STATS TABLE
+  // DRAW STATS TABLE (UPDATED)
   // =====================
   function drawStatsTable() {
     const totalStats = levelStats.reduce((acc, stat) => {
-      acc.totalTime += stat.time;
-      acc.totalChances += stat.chancesUsed;
-      acc.totalReplays += stat.replays;
+      acc.totalTime += stat.time; // Sum up total time across levels
+      acc.totalChances += stat.chancesUsed; // Sum up total chances used across levels
+      acc.totalReplays += stat.replays; // Sum up total replays across levels
       return acc;
     }, { totalTime: 0, totalChances: 0, totalReplays: 0 });
 
@@ -328,15 +335,15 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.font = "20px Arial";
     ctx.fillText("Level", 100, 100);
     ctx.fillText("Time (s)", 200, 100);
-    ctx.fillText("Chances Used", 300, 100);
-    ctx.fillText("Replays", 450, 100);
+    ctx.fillText("Chances Used", 300, 100); // Ensure correct column label
+    ctx.fillText("Replays", 450, 100); // Ensure correct column label
 
     levelStats.forEach((stat, index) => {
       const y = 130 + index * 30;
       ctx.fillText(stat.level, 100, y);
-      ctx.fillText(stat.time, 200, y);
-      ctx.fillText(stat.chancesUsed, 300, y);
-      ctx.fillText(stat.replays, 450, y);
+      ctx.fillText(stat.time, 200, y); // Display distinct time for each level
+      ctx.fillText(stat.chancesUsed, 300, y); // Display distinct chances used for each level
+      ctx.fillText(stat.replays, 450, y); // Display distinct replays for each level
     });
 
     ctx.fillText("Summary:", 100, VIRTUAL_HEIGHT - 150);
@@ -348,3 +355,5 @@ document.addEventListener("DOMContentLoaded", () => {
   startLevel();
   setInterval(gameLoop, 1000/FPS);
 });
+
+
