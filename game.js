@@ -49,15 +49,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // LEVEL DATA
   // =====================
   const LEVELS = [
-    {speed:0.7, balls:1, hits:5},
-    {speed:0.7, balls:2, hits:5},
-    {speed:0.8, balls:3, hits:6},
-    {speed:0.9, balls:3, hits:6},
-    {speed:0.9, balls:3, hits:6},
-    {speed:1.0, balls:3, hits:7},
-    {speed:1.0, balls:4, hits:8},
-    {speed:1.0, balls:4, hits:9},
-    {speed:1.0, balls:4, hits:10},
+    {speed:1.0, balls:1, hits:5},
+    {speed:1.0, balls:2, hits:5},
+    {speed:1.0, balls:3, hits:11},
+    {speed:1.0, balls:3, hits:11},
+    {speed:1.0, balls:3, hits:11},
+    {speed:1.0, balls:3, hits:11},
+    {speed:1.0, balls:4, hits:11},
+    {speed:1.0, balls:4, hits:11},
+    {speed:1.0, balls:4, hits:11},
     {speed:1.0, balls:4, hits:11}
   ];
 
@@ -374,4 +374,5 @@ document.addEventListener("DOMContentLoaded", () => {
   startLevel();
   setInterval(gameLoop, 1000/FPS);
 });
+
 
