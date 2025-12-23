@@ -98,6 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const levelStats = [];
   let totalReplays = 0;
   let levelStartTime = 0;
+  let chancesUsedThisLevel = 0;
 
   // =====================
   // HELPERS
@@ -155,6 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
       isReplay = true;
     } else {
       isReplay = false;
+      chancesUsedThisLevel = 0; // Reset for new level
     }
 
     const lvl = LEVELS[levelIndex];
@@ -204,9 +206,24 @@ document.addEventListener("DOMContentLoaded", () => {
   // =====================
   // GAME LOOP (UPDATED)
   // =====================
+  let quitTriggered = false;
+
+  // Add quit button event
+  document.getElementById("quitBtn").addEventListener("click", () => {
+    quitTriggered = true;
+    gameState = "GAME_QUIT";
+  });
+
   function gameLoop() {
     drawBackground();
     const now = performance.now();
+
+    if (quitTriggered || gameState === "GAME_QUIT") {
+      drawCleanOverlay();
+      drawCenteredText("GAME QUIT", 44, -10);
+      drawStatsTable();
+      return;
+    }
 
     if (gameState === "GAME_COMPLETE") {
       drawCleanOverlay();
@@ -295,6 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.fillText(`Chances: ${chances}`, 10, 75);
 
     if (chances <= 0) {
+      chancesUsedThisLevel += 3; // Add 3 chances lost for this replay
       gameState = "LEVEL_END";
       endMessage = "LEVEL FAILED!";
       canShoot = false;
@@ -302,11 +320,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (hits >= lvl.hits) {
+      chancesUsedThisLevel += (3 - chances); // Add remaining chances lost in this run
       const levelTime = Math.round((performance.now() - levelStartTime) / 1000); // Use performance.now() for accuracy
       levelStats.push({
         level: levelIndex + 1,
         time: levelTime,
-        chancesUsed: 3 - chances,
+        chancesUsed: chancesUsedThisLevel,
         replays: totalReplays
       });
       gameState = "LEVEL_END";
@@ -355,5 +374,4 @@ document.addEventListener("DOMContentLoaded", () => {
   startLevel();
   setInterval(gameLoop, 1000/FPS);
 });
-
 
