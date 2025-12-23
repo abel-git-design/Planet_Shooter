@@ -290,3 +290,5 @@ document.addEventListener("DOMContentLoaded", () => {
   setInterval(gameLoop, 1000/FPS);
 });
 
+
+
