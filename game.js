@@ -467,18 +467,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Share button logic (share entire stats table area as image, trigger system share directly)
   document.getElementById("shareBtn").addEventListener("click", async function() {
-    // Capture the entire stats table area as an image
+    // Capture the entire stats table area as an image, accounting for canvas scaling
     const canvas = document.getElementById("gameCanvas");
     const VIRTUAL_WIDTH = 800;
     const VIRTUAL_HEIGHT = 600;
     const tableX = 50, tableY = 50, tableWidth = VIRTUAL_WIDTH - 100, tableHeight = VIRTUAL_HEIGHT - 100;
 
+    // Calculate the scale between the actual canvas size and the virtual size
+    const scaleX = canvas.width / VIRTUAL_WIDTH;
+    const scaleY = canvas.height / VIRTUAL_HEIGHT;
+
+    // Calculate the actual pixel area to copy
+    const sx = tableX * scaleX;
+    const sy = tableY * scaleY;
+    const sw = tableWidth * scaleX;
+    const sh = tableHeight * scaleY;
+
     // Create a temporary canvas to copy the full stats table area
     const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = tableWidth;
-    tempCanvas.height = tableHeight;
+    tempCanvas.width = sw;
+    tempCanvas.height = sh;
     const tempCtx = tempCanvas.getContext("2d");
-    tempCtx.drawImage(canvas, tableX, tableY, tableWidth, tableHeight, 0, 0, tableWidth, tableHeight);
+    tempCtx.drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
     const dataUrl = tempCanvas.toDataURL("image/png");
 
     // Try to share directly using Web Share API (if supported)
