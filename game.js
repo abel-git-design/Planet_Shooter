@@ -49,15 +49,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // LEVEL DATA
   // =====================
   const LEVELS = [
-    {speed:1.0, balls:1, hits:5},
-    {speed:1.0, balls:2, hits:5},
-    {speed:1.0, balls:3, hits:11},
-    {speed:1.0, balls:3, hits:11},
-    {speed:1.0, balls:3, hits:11},
-    {speed:1.0, balls:3, hits:11},
-    {speed:1.0, balls:4, hits:11},
-    {speed:1.0, balls:4, hits:11},
-    {speed:1.0, balls:4, hits:11},
+    {speed:0.7, balls:1, hits:5},
+    {speed:0.7, balls:2, hits:5},
+    {speed:0.8, balls:3, hits:6},
+    {speed:0.9, balls:3, hits:6},
+    {speed:0.9, balls:3, hits:6},
+    {speed:1.0, balls:3, hits:7},
+    {speed:1.0, balls:4, hits:8},
+    {speed:1.0, balls:4, hits:9},
+    {speed:1.0, balls:4, hits:10},
     {speed:1.0, balls:4, hits:11}
   ];
 
@@ -207,6 +207,54 @@ document.addEventListener("DOMContentLoaded", () => {
   // GAME LOOP (UPDATED)
   // =====================
   let quitTriggered = false;
+  let userInfo = { name: "", age: "", sex: "", gamer: "" };
+
+  // User info modal logic
+  const userInfoModal = document.getElementById("userInfoModal");
+  const userInfoForm = document.getElementById("userInfoForm");
+  const userNameInput = document.getElementById("userName");
+  const userAgeInput = document.getElementById("userAge");
+  const userSexInput = document.getElementById("userSex");
+  const userGamerInput = document.getElementById("userGamer");
+  const userInfoError = document.getElementById("userInfoError");
+
+  function showUserInfoModal() {
+    userInfoModal.style.display = "flex";
+  }
+  function hideUserInfoModal() {
+    userInfoModal.style.display = "none";
+  }
+
+  userInfoForm.addEventListener("submit", function(e) {
+    e.preventDefault();
+    userInfoError.style.display = "none";
+    const name = userNameInput.value.trim();
+    const age = userAgeInput.value.trim();
+    const sex = userSexInput.value;
+    const gamer = userGamerInput.value;
+    if (!age || isNaN(Number(age)) || Number(age) < 1) {
+      userInfoError.textContent = "Please enter a valid age.";
+      userInfoError.style.display = "block";
+      return;
+    }
+    if (!sex) {
+      userInfoError.textContent = "Please select your sex.";
+      userInfoError.style.display = "block";
+      return;
+    }
+    if (!gamer) {
+      userInfoError.textContent = "Please select if you often play games.";
+      userInfoError.style.display = "block";
+      return;
+    }
+    userInfo = { name, age, sex, gamer };
+    hideUserInfoModal();
+    startLevel();
+    setInterval(gameLoop, 1000/FPS);
+  });
+
+  // Show modal before game starts
+  showUserInfoModal();
 
   // Add quit button event
   document.getElementById("quitBtn").addEventListener("click", () => {
@@ -334,12 +382,27 @@ document.addEventListener("DOMContentLoaded", () => {
       levelIndex++;
       setTimeout(startLevel, 1500);
     }
+    hideShareBtn();
   }
 
   // =====================
   // DRAW STATS TABLE (UPDATED)
   // =====================
   function drawStatsTable() {
+    const tableX = 50;
+    const tableY = 50;
+    const tableWidth = VIRTUAL_WIDTH - 100;
+    const tableHeight = VIRTUAL_HEIGHT - 100;
+    ctx.fillStyle = "white";
+    ctx.fillRect(tableX, tableY, tableWidth, tableHeight);
+
+    ctx.fillStyle = "black";
+    ctx.font = "20px Arial";
+    ctx.fillText("Level", tableX + 50, tableY + 50);
+    ctx.fillText("Time (s)", tableX + 150, tableY + 50);
+    ctx.fillText("Chances Used", tableX + 270, tableY + 50);
+    ctx.fillText("Replays", tableX + 420, tableY + 50);
+
     const totalStats = levelStats.reduce((acc, stat) => {
       acc.totalTime += stat.time; // Sum up total time across levels
       acc.totalChances += stat.chancesUsed; // Sum up total chances used across levels
@@ -347,32 +410,92 @@ document.addEventListener("DOMContentLoaded", () => {
       return acc;
     }, { totalTime: 0, totalChances: 0, totalReplays: 0 });
 
-    ctx.fillStyle = "white";
-    ctx.fillRect(50, 50, VIRTUAL_WIDTH - 100, VIRTUAL_HEIGHT - 100);
-
-    ctx.fillStyle = "black";
-    ctx.font = "20px Arial";
-    ctx.fillText("Level", 100, 100);
-    ctx.fillText("Time (s)", 200, 100);
-    ctx.fillText("Chances Used", 300, 100); // Ensure correct column label
-    ctx.fillText("Replays", 450, 100); // Ensure correct column label
-
     levelStats.forEach((stat, index) => {
-      const y = 130 + index * 30;
-      ctx.fillText(stat.level, 100, y);
-      ctx.fillText(stat.time, 200, y); // Display distinct time for each level
-      ctx.fillText(stat.chancesUsed, 300, y); // Display distinct chances used for each level
-      ctx.fillText(stat.replays, 450, y); // Display distinct replays for each level
+      const y = tableY + 80 + index * 30;
+      ctx.fillText(stat.level, tableX + 50, y);
+      ctx.fillText(stat.time, tableX + 150, y);
+      ctx.fillText(stat.chancesUsed, tableX + 270, y);
+      ctx.fillText(stat.replays, tableX + 420, y);
     });
 
-    ctx.fillText("Summary:", 100, VIRTUAL_HEIGHT - 150);
-    ctx.fillText(`Total Time: ${totalStats.totalTime}s`, 100, VIRTUAL_HEIGHT - 120);
-    ctx.fillText(`Total Chances: ${totalStats.totalChances}`, 100, VIRTUAL_HEIGHT - 90);
-    ctx.fillText(`Total Replays: ${totalStats.totalReplays}`, 100, VIRTUAL_HEIGHT - 60);
+    ctx.fillText("Summary:", tableX + 50, tableY + tableHeight - 120);
+    ctx.fillText(`Total Time: ${totalStats.totalTime}s`, tableX + 50, tableY + tableHeight - 90);
+    ctx.fillText(`Total Chances: ${totalStats.totalChances}`, tableX + 50, tableY + tableHeight - 60);
+    ctx.fillText(`Total Replays: ${totalStats.totalReplays}`, tableX + 50, tableY + tableHeight - 30);
+
+    // Draw user info in a box at the bottom right of the table, below the summary
+    const infoBoxWidth = 320;
+    const infoBoxHeight = 120;
+    const infoBoxX = tableX + tableWidth - infoBoxWidth - 20;
+    const infoBoxY = tableY + tableHeight - infoBoxHeight - 20;
+    ctx.fillStyle = "#f2f2f2";
+    ctx.fillRect(infoBoxX, infoBoxY, infoBoxWidth, infoBoxHeight);
+    ctx.strokeStyle = "#bbb";
+    ctx.strokeRect(infoBoxX, infoBoxY, infoBoxWidth, infoBoxHeight);
+    ctx.fillStyle = "black";
+    ctx.font = "18px Arial";
+    ctx.fillText("User Info:", infoBoxX + 10, infoBoxY + 28);
+    ctx.font = "16px Arial";
+    ctx.fillText(`Name: ${userInfo.name ? userInfo.name : "(Not provided)"}`, infoBoxX + 10, infoBoxY + 50);
+    ctx.fillText(`Age: ${userInfo.age}`, infoBoxX + 10, infoBoxY + 70);
+    ctx.fillText(`Sex: ${userInfo.sex}`, infoBoxX + 10, infoBoxY + 90);
+    ctx.fillText(`Often plays games: ${userInfo.gamer}`, infoBoxX + 10, infoBoxY + 110);
+    ctx.font = "20px Arial";
+
+    // Show share button
+    const shareBtn = document.getElementById("shareBtn");
+    if (shareBtn) shareBtn.style.display = "block";
   }
 
-  startLevel();
-  setInterval(gameLoop, 1000/FPS);
+  // Hide share button when not on stats table
+  function hideShareBtn() {
+    const shareBtn = document.getElementById("shareBtn");
+    if (shareBtn) shareBtn.style.display = "none";
+  }
+
+  // Share button logic
+  function getStatsSummaryText() {
+    let text = `Planet Shooter Game Results\n`;
+    text += `--------------------------\n`;
+    text += `User Info:\n`;
+    text += `  Name: ${userInfo.name ? userInfo.name : "(Not provided)"}\n`;
+    text += `  Age: ${userInfo.age}\n`;
+    text += `  Sex: ${userInfo.sex}\n`;
+    text += `  Often plays games: ${userInfo.gamer}\n`;
+    text += `--------------------------\n`;
+    text += `Level | Time(s) | Chances Used | Replays\n`;
+    levelStats.forEach(stat => {
+      text += `${stat.level}     | ${stat.time}      | ${stat.chancesUsed}           | ${stat.replays}\n`;
+    });
+    const totalStats = levelStats.reduce((acc, stat) => {
+      acc.totalTime += stat.time;
+      acc.totalChances += stat.chancesUsed;
+      acc.totalReplays += stat.replays;
+      return acc;
+    }, { totalTime: 0, totalChances: 0, totalReplays: 0 });
+    text += `--------------------------\n`;
+    text += `Total Time: ${totalStats.totalTime}s\n`;
+    text += `Total Chances: ${totalStats.totalChances}\n`;
+    text += `Total Replays: ${totalStats.totalReplays}\n`;
+    return text;
+  }
+
+  document.getElementById("shareBtn").addEventListener("click", function() {
+    const summary = getStatsSummaryText();
+    // Offer options for Email and WhatsApp
+    const mailto = `mailto:?subject=My Planet Shooter Game Results&body=${encodeURIComponent(summary)}`;
+    const whatsapp = `https://wa.me/?text=${encodeURIComponent(summary)}`;
+    // Simple prompt for user to choose
+    const shareChoice = window.prompt("Type 'email' to share via Email, 'whatsapp' to share via WhatsApp:");
+    if (shareChoice && shareChoice.toLowerCase().includes("email")) {
+      window.open(mailto, "_blank");
+    } else if (shareChoice && shareChoice.toLowerCase().includes("whatsapp")) {
+      window.open(whatsapp, "_blank");
+    } else {
+      // Optionally, copy to clipboard
+      navigator.clipboard.writeText(summary);
+      alert("Stats copied to clipboard! You can paste and share anywhere.");
+    }
+  });
+
 });
-
-
