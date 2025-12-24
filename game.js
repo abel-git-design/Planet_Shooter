@@ -465,49 +465,69 @@ document.addEventListener("DOMContentLoaded", () => {
     if (shareBtn) shareBtn.style.display = "none";
   }
 
-  // Share button logic
-  function getStatsSummaryText() {
-    let text = `Planet Shooter Game Results\n`;
-    text += `--------------------------\n`;
-    text += `User Info:\n`;
-    text += `  Name: ${userInfo.name ? userInfo.name : "(Not provided)"}\n`;
-    text += `  Age: ${userInfo.age}\n`;
-    text += `  Sex: ${userInfo.sex}\n`;
-    text += `  Often plays games: ${userInfo.gamer}\n`;
-    text += `--------------------------\n`;
-    text += `Level | Time(s) | Chances Used | Replays\n`;
-    levelStats.forEach(stat => {
-      text += `${stat.level}     | ${stat.time}      | ${stat.chancesUsed}           | ${stat.replays}\n`;
-    });
-    const totalStats = levelStats.reduce((acc, stat) => {
-      acc.totalTime += stat.time;
-      acc.totalChances += stat.chancesUsed;
-      acc.totalReplays += stat.replays;
-      return acc;
-    }, { totalTime: 0, totalChances: 0, totalReplays: 0 });
-    text += `--------------------------\n`;
-    text += `Total Time: ${totalStats.totalTime}s\n`;
-    text += `Total Chances: ${totalStats.totalChances}\n`;
-    text += `Total Replays: ${totalStats.totalReplays}\n`;
-    return text;
-  }
-
+  // Share button logic (updated for image sharing)
   document.getElementById("shareBtn").addEventListener("click", function() {
-    const summary = getStatsSummaryText();
-    // Offer options for Email and WhatsApp
-    const mailto = `mailto:?subject=My Planet Shooter Game Results&body=${encodeURIComponent(summary)}`;
-    const whatsapp = `https://wa.me/?text=${encodeURIComponent(summary)}`;
-    // Simple prompt for user to choose
-    const shareChoice = window.prompt("Type 'email' to share via Email, 'whatsapp' to share via WhatsApp:");
-    if (shareChoice && shareChoice.toLowerCase().includes("email")) {
-      window.open(mailto, "_blank");
-    } else if (shareChoice && shareChoice.toLowerCase().includes("whatsapp")) {
-      window.open(whatsapp, "_blank");
-    } else {
-      // Optionally, copy to clipboard
-      navigator.clipboard.writeText(summary);
-      alert("Stats copied to clipboard! You can paste and share anywhere.");
-    }
+    // Capture the stats table area as an image
+    // We'll use the canvas's toDataURL, cropping to the stats table area
+    const canvas = document.getElementById("gameCanvas");
+    const VIRTUAL_WIDTH = 800;
+    const VIRTUAL_HEIGHT = 600;
+    const tableX = 50, tableY = 50, tableWidth = VIRTUAL_WIDTH - 100, tableHeight = VIRTUAL_HEIGHT - 100;
+    // Create a temporary canvas to copy the stats table area
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = tableWidth;
+    tempCanvas.height = tableHeight;
+    const tempCtx = tempCanvas.getContext("2d");
+    tempCtx.drawImage(canvas, tableX, tableY, tableWidth, tableHeight, 0, 0, tableWidth, tableHeight);
+    const dataUrl = tempCanvas.toDataURL("image/png");
+
+    // Show the share modal
+    const shareModal = document.getElementById("shareImageModal");
+    const sharePreview = document.getElementById("shareImagePreview");
+    const shareDownload = document.getElementById("shareImageDownload");
+    sharePreview.innerHTML = `<img src='${dataUrl}' alt='Stats Table' style='max-width:100%; border:1px solid #ccc; border-radius:8px;'/>`;
+    shareDownload.innerHTML = `<a href='${dataUrl}' download='planet-shooter-results.png' style='font-size:15px;'>Download Image</a>`;
+    shareModal.style.display = "flex";
+
+    // Close modal logic
+    document.getElementById("closeShareImageModal").onclick = function() {
+      shareModal.style.display = "none";
+    };
+
+    // WhatsApp share
+    document.getElementById("shareWhatsappBtn").onclick = function() {
+      // WhatsApp does not support direct image sharing via URL, so prompt download/copy
+      alert("To share an image on WhatsApp Web, download the image and attach it in your chat. On mobile, use the 'More' button for direct sharing if supported.");
+    };
+
+    // Gmail share
+    document.getElementById("shareGmailBtn").onclick = function() {
+      // Gmail web does not support direct image attachment via URL, so prompt download/copy
+      alert("To share via Gmail, download the image and attach it to your email. On mobile, use the 'More' button for direct sharing if supported.");
+    };
+
+    // System share (Web Share API)
+    document.getElementById("shareMoreBtn").onclick = async function() {
+      if (navigator.canShare && window.File && window.fetch) {
+        // Convert dataURL to blob and share
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        const file = new File([blob], "planet-shooter-results.png", { type: "image/png" });
+        try {
+          await navigator.share({
+            files: [file],
+            title: "Planet Shooter Results",
+            text: "Check out my Planet Shooter game results!"
+          });
+          shareModal.style.display = "none";
+        } catch (e) {
+          // User cancelled or not supported
+          alert("Sharing was cancelled or not supported on this device.");
+        }
+      } else {
+        alert("System sharing is not supported in this browser. Please download the image and share manually.");
+      }
+    };
   });
 
 });
