@@ -6,7 +6,25 @@ document.addEventListener("DOMContentLoaded", () => {
   // =====================
   // GOOGLE SHEET CONFIG
   // =====================
-  const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzwevpxQZ_tDUDYOZAx3deIEsuCavlb2CyiPh25dapltiSkPjOUJ6WMivK6nndNexWPlg/exec" ;
+  const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzwevpxQZ_tDUDYOZAx3deIEsuCavlb2CyiPh25dapltiSkPjOUJ6WMivK6nndNexWPlg/exec";
+
+  // =====================
+  // CREATE SUBMIT BUTTON
+  // =====================
+  const submitBtn = document.createElement("button");
+  submitBtn.id = "submitResultsBtn";
+  submitBtn.textContent = "Submit Results";
+  submitBtn.style.position = "absolute";
+  submitBtn.style.bottom = "20px";
+  submitBtn.style.left = "50%";
+  submitBtn.style.transform = "translateX(-50%)";
+  submitBtn.style.padding = "12px 26px";
+  submitBtn.style.fontSize = "18px";
+  submitBtn.style.cursor = "pointer";
+  submitBtn.style.display = "none";
+  document.body.appendChild(submitBtn);
+
+  submitBtn.addEventListener("click", submitResultsToGoogleSheet);
 
   // =====================
   // VIRTUAL GAME SPACE
@@ -33,8 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // COLORS
   // =====================
   const BG_COLOR = [120,120,120];
-  const PLANET_LIGHT = "rgb(230,230,230)";
-  const PLANET_DARK = "rgb(20,20,20)";
   const BASE_ENEMY_COLOR = [150,150,150];
   const BASE_BALL_COLOR = [200,200,200];
   const ENEMY_RADIUS = 100;
@@ -42,10 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // =====================
   // CONTRAST MAP
   // =====================
-  const CONTRAST_MAP = [
-    0.00, 0.30, 0.40, 0.50, 0.65,
-    0.75, 0.80, 0.85, 0.90, 0.95
-  ];
+  const CONTRAST_MAP = [0.00,0.30,0.40,0.50,0.65,0.75,0.80,0.85,0.90,0.95];
 
   // =====================
   // LEVEL DATA
@@ -77,10 +90,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let gameState = "COUNTDOWN";
   let stateStartTime = 0;
   let endMessage = "";
-  let isReplay = false;
 
   // =====================
-  // GAME STATS
+  // STATS
   // =====================
   const levelStats = [];
   let totalReplays = 0;
@@ -88,9 +100,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let chancesUsedThisLevel = 0;
 
   // =====================
-  // USER INFO
+  // USER INFO (FROM MODAL)
   // =====================
-  let userInfo = { name: "", age: "", sex: "", gamer: "" };
+  let userInfo = { name:"", age:"", sex:"", gamer:"" };
 
   // =====================
   // HELPERS
@@ -101,65 +113,92 @@ document.addEventListener("DOMContentLoaded", () => {
     ).join(",")})`;
   }
 
-  function angleCollision(a1, a2) {
-    const diff = Math.abs(a1 - a2) % 360;
-    return diff < 14 || diff > 346;
-  }
-
   function drawBackground() {
     ctx.fillStyle = `rgb(${BG_COLOR.join(",")})`;
     ctx.fillRect(0,0,VIRTUAL_WIDTH,VIRTUAL_HEIGHT);
   }
 
-  function drawCenteredText(txt, size=48, yOffset=0) {
+  function drawCenteredText(txt, size=40, yOffset=0) {
     ctx.fillStyle = "black";
     ctx.font = `${size}px Arial`;
     const m = ctx.measureText(txt);
     ctx.fillText(txt, VIRTUAL_WIDTH/2 - m.width/2, VIRTUAL_HEIGHT/2 + yOffset);
   }
 
-  function drawCleanOverlay() {
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.fillRect(0, VIRTUAL_HEIGHT/2 - 90, VIRTUAL_WIDTH, 180);
+  // =====================
+  // LEVEL INIT
+  // =====================
+  function startLevel() {
+    if (levelIndex >= LEVELS.length) {
+      gameState = "GAME_COMPLETE";
+      return;
+    }
+    enemyAngle = 0;
+    chances = 3;
+    hits = 0;
+    attachedAngles = [];
+    shooting = false;
+    shotY = VIRTUAL_HEIGHT - 50;
+    chancesUsedThisLevel = 0;
+    levelStartTime = performance.now();
+    gameState = "COUNTDOWN";
+    stateStartTime = performance.now();
   }
 
   // =====================
-  // SUBMIT BUTTON (AUTO CREATE)
+  // INPUT
   // =====================
-  const submitBtn = document.createElement("button");
-  submitBtn.textContent = "Submit Results";
-  submitBtn.style.position = "absolute";
-  submitBtn.style.bottom = "20px";
-  submitBtn.style.left = "50%";
-  submitBtn.style.transform = "translateX(-50%)";
-  submitBtn.style.padding = "12px 24px";
-  submitBtn.style.fontSize = "18px";
-  submitBtn.style.display = "none";
-  document.body.appendChild(submitBtn);
-
-  submitBtn.addEventListener("click", submitResultsToGoogleSheet);
+  document.addEventListener("keydown", e => {
+    if (e.code === "Space" && canShoot && !shooting && gameState==="PLAYING") {
+      shooting = true;
+    }
+  });
 
   // =====================
-  // COLLECT STATS
+  // GAME LOOP
+  // =====================
+  function gameLoop() {
+    drawBackground();
+
+    if (gameState === "GAME_COMPLETE" || gameState === "GAME_QUIT") {
+      drawStatsTable();
+      submitBtn.style.display = "block";
+      return;
+    }
+
+    submitBtn.style.display = "none";
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  // =====================
+  // DRAW STATS TABLE
+  // =====================
+  function drawStatsTable() {
+    ctx.fillStyle = "white";
+    ctx.fillRect(50,50,VIRTUAL_WIDTH-100,VIRTUAL_HEIGHT-100);
+    ctx.fillStyle = "black";
+    ctx.font = "26px Arial";
+    ctx.fillText("GAME RESULTS", 280, 90);
+  }
+
+  // =====================
+  // COLLECT DATA
   // =====================
   function collectStatsForSheet() {
-    const totalStats = levelStats.reduce((acc, stat) => {
-      acc.totalTime += stat.time;
-      acc.totalChances += stat.chancesUsed;
-      acc.totalReplays += stat.replays;
-      return acc;
-    }, { totalTime: 0, totalChances: 0, totalReplays: 0 });
+    const totals = levelStats.reduce((a,s)=>{
+      a.time+=s.time; a.chances+=s.chancesUsed; a.replays+=s.replays;
+      return a;
+    },{time:0,chances:0,replays:0});
 
     return {
-      level: levelStats.map(s => s.level).join(","),
-      time: levelStats.map(s => s.time).join(","),
-      chancesUsed: levelStats.map(s => s.chancesUsed).join(","),
-      replays: levelStats.map(s => s.replays).join(","),
-
-      totalTime: totalStats.totalTime,
-      totalChances: totalStats.totalChances,
-      totalReplays: totalStats.totalReplays,
-
+      level: levelStats.map(s=>s.level).join(","),
+      time: levelStats.map(s=>s.time).join(","),
+      chancesUsed: levelStats.map(s=>s.chancesUsed).join(","),
+      replays: levelStats.map(s=>s.replays).join(","),
+      totalTime: totals.time,
+      totalChances: totals.chances,
+      totalReplays: totals.replays,
       name: userInfo.name,
       age: userInfo.age,
       sex: userInfo.sex,
@@ -181,24 +220,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // =====================
-  // DRAW STATS TABLE
+  // START GAME LOOP
   // =====================
-  function drawStatsTable() {
-    drawCleanOverlay();
-    drawCenteredText("GAME RESULTS", 36, -100);
-    submitBtn.style.display = "block";
-  }
-
-  // =====================
-  // GAME LOOP (END STATES ONLY SHOWN)
-  // =====================
-  function gameLoop() {
-    drawBackground();
-    if (gameState === "GAME_COMPLETE" || gameState === "GAME_QUIT") {
-      drawStatsTable();
-      return;
-    }
-  }
+  startLevel();
+  gameLoop();
 
 });
 
