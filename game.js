@@ -465,15 +465,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (shareBtn) shareBtn.style.display = "none";
   }
 
-  // Share button logic (updated for image sharing)
-  document.getElementById("shareBtn").addEventListener("click", function() {
-    // Capture the stats table area as an image
-    // We'll use the canvas's toDataURL, cropping to the stats table area
+  // Share button logic (share entire stats table area as image, trigger system share directly)
+  document.getElementById("shareBtn").addEventListener("click", async function() {
+    // Capture the entire stats table area as an image
     const canvas = document.getElementById("gameCanvas");
     const VIRTUAL_WIDTH = 800;
     const VIRTUAL_HEIGHT = 600;
     const tableX = 50, tableY = 50, tableWidth = VIRTUAL_WIDTH - 100, tableHeight = VIRTUAL_HEIGHT - 100;
-    // Create a temporary canvas to copy the stats table area
+
+    // Create a temporary canvas to copy the full stats table area
     const tempCanvas = document.createElement("canvas");
     tempCanvas.width = tableWidth;
     tempCanvas.height = tableHeight;
@@ -481,53 +481,32 @@ document.addEventListener("DOMContentLoaded", () => {
     tempCtx.drawImage(canvas, tableX, tableY, tableWidth, tableHeight, 0, 0, tableWidth, tableHeight);
     const dataUrl = tempCanvas.toDataURL("image/png");
 
-    // Show the share modal
-    const shareModal = document.getElementById("shareImageModal");
-    const sharePreview = document.getElementById("shareImagePreview");
-    const shareDownload = document.getElementById("shareImageDownload");
-    sharePreview.innerHTML = `<img src='${dataUrl}' alt='Stats Table' style='max-width:100%; border:1px solid #ccc; border-radius:8px;'/>`;
-    shareDownload.innerHTML = `<a href='${dataUrl}' download='planet-shooter-results.png' style='font-size:15px;'>Download Image</a>`;
-    shareModal.style.display = "flex";
-
-    // Close modal logic
-    document.getElementById("closeShareImageModal").onclick = function() {
-      shareModal.style.display = "none";
-    };
-
-    // WhatsApp share
-    document.getElementById("shareWhatsappBtn").onclick = function() {
-      // WhatsApp does not support direct image sharing via URL, so prompt download/copy
-      alert("To share an image on WhatsApp Web, download the image and attach it in your chat. On mobile, use the 'More' button for direct sharing if supported.");
-    };
-
-    // Gmail share
-    document.getElementById("shareGmailBtn").onclick = function() {
-      // Gmail web does not support direct image attachment via URL, so prompt download/copy
-      alert("To share via Gmail, download the image and attach it to your email. On mobile, use the 'More' button for direct sharing if supported.");
-    };
-
-    // System share (Web Share API)
-    document.getElementById("shareMoreBtn").onclick = async function() {
-      if (navigator.canShare && window.File && window.fetch) {
-        // Convert dataURL to blob and share
-        const res = await fetch(dataUrl);
-        const blob = await res.blob();
-        const file = new File([blob], "planet-shooter-results.png", { type: "image/png" });
-        try {
-          await navigator.share({
-            files: [file],
-            title: "Planet Shooter Results",
-            text: "Check out my Planet Shooter game results!"
-          });
-          shareModal.style.display = "none";
-        } catch (e) {
-          // User cancelled or not supported
-          alert("Sharing was cancelled or not supported on this device.");
-        }
-      } else {
-        alert("System sharing is not supported in this browser. Please download the image and share manually.");
+    // Try to share directly using Web Share API (if supported)
+    if (navigator.canShare && window.File && window.fetch) {
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], "planet-shooter-results.png", { type: "image/png" });
+      try {
+        await navigator.share({
+          files: [file],
+          title: "Planet Shooter Results",
+          text: "Check out my Planet Shooter game results!"
+        });
+      } catch (e) {
+        alert("Sharing was cancelled or not supported on this device.");
       }
-    };
+    } else {
+      // Fallback: show download link
+      const shareModal = document.getElementById("shareImageModal");
+      const sharePreview = document.getElementById("shareImagePreview");
+      const shareDownload = document.getElementById("shareImageDownload");
+      sharePreview.innerHTML = `<img src='${dataUrl}' alt='Stats Table' style='max-width:100%; border:1px solid #ccc; border-radius:8px;'/>`;
+      shareDownload.innerHTML = `<a href='${dataUrl}' download='planet-shooter-results.png' style='font-size:15px;'>Download Image</a>`;
+      shareModal.style.display = "flex";
+      document.getElementById("closeShareImageModal").onclick = function() {
+        shareModal.style.display = "none";
+      };
+    }
   });
 
 });
