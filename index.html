@@ -7,82 +7,7 @@
   <meta name="viewport"
         content="width=device-width, height=device-height,
                  initial-scale=1.0, user-scalable=no">
-   <style>
-    body {
-      background: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding-top: 60px;
-    }
 
-    .chrome-btn {
-      display: none;
-      padding: 14px 22px;
-      font-size: 16px;
-      background: #4285F4;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 20px;
-    }
-
-    .chrome-btn:hover {
-      background: #3367D6;
-    }
-
-    .note {
-      font-size: 14px;
-      opacity: 0.85;
-      margin-top: 12px;
-    }
-  </style>
-</head>
-
-<body>
-
-  <h1>Planet Shooter</h1>
-  <p>For best performance, open this game in Google Chrome.</p>
-
-  <button id="chromeBtn" class="chrome-btn">
-    Open in Google Chrome
-  </button>
-
-  <p class="note">
-    (Recommended for smooth gameplay and audio)
-  </p>
-
-  <script>
-    (function () {
-      const isAndroid = /Android/i.test(navigator.userAgent);
-      const chromeBtn = document.getElementById("chromeBtn");
-
-      if (isAndroid) {
-        chromeBtn.style.display = "inline-block";
-
-        chromeBtn.addEventListener("click", function () {
-          const chromeIntent =
-            "intent://abel-git-design.github.io/Planet_Shooter/#Intent;" +
-            "scheme=https;" +
-            "package=com.android.chrome;" +
-            "end;";
-
-          // Try opening in Chrome
-          window.location.href = chromeIntent;
-
-          // Fallback to normal browser after 1.5s
-          setTimeout(function () {
-            window.location.href =
-              "https://abel-git-design.github.io/Planet_Shooter/";
-          }, 1500);
-        });
-      }
-    })();
-  </script>
-
-</body>
-</html>
   <style>
     body {
       margin: 0;
@@ -168,4 +93,3 @@
   <script src="game.js"></script>
 </body>
 </html>
-
