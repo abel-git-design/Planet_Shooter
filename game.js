@@ -332,6 +332,9 @@ document.addEventListener("DOMContentLoaded", () => {
     gameState = "GAME_QUIT";
   });
 
+  // Make the shooting ball larger
+  const SHOOT_BALL_RADIUS = Math.floor(VIRTUAL_WIDTH * 0.013); // was 7, now ~12 for 900px
+
   function gameLoop() {
     drawBackground();
     const now = performance.now();
@@ -407,14 +410,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!shooting) {
       ctx.beginPath();
-      ctx.arc(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT - 50, 7, 0, Math.PI * 2);
+      ctx.arc(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT - 50, SHOOT_BALL_RADIUS, 0, Math.PI * 2);
       ctx.fill();
     }
 
     if (shooting) {
       shotY -= 12;
       ctx.beginPath();
-      ctx.arc(VIRTUAL_WIDTH / 2, shotY, 7, 0, Math.PI * 2);
+      ctx.arc(VIRTUAL_WIDTH / 2, shotY, SHOOT_BALL_RADIUS, 0, Math.PI * 2);
       ctx.fill();
 
       if (shotY <= VIRTUAL_HEIGHT / 2 + ENEMY_RADIUS) {
@@ -597,3 +600,4 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
+
