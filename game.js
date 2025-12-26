@@ -396,7 +396,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform for HUD
     if (isMobile()) {
       // On mobile: stack HUD items vertically, increase bar height, move bar lower to avoid background objects
-      const hudBarHeight = 100;
+      const hudBarHeight = 90;
       const hudBarY = 18; // Move down from top to avoid background planets
       ctx.fillStyle = "rgba(255,255,255,0.96)";
       ctx.fillRect(0, hudBarY, canvas.width, hudBarHeight);
@@ -626,6 +626,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
+
 
 
 
