@@ -400,7 +400,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const hudBarY = 18; // Move down from top to avoid background planets
       ctx.fillStyle = "rgba(255,255,255,0.96)";
       ctx.fillRect(0, hudBarY, canvas.width, hudBarHeight);
-      ctx.font = "bold 1.1rem Arial";
+      ctx.font = "bold 4.1rem Arial";
       ctx.fillStyle = "#222";
       ctx.textBaseline = "top";
       const spacing = 8;
@@ -626,6 +626,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
+
 
 
 
