@@ -391,42 +391,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     enemyAngle = (enemyAngle + (lvl.speed + levelIndex * 0.08)) % 360;
 
-    // Draw HUD (Level, Score, Chances) in a fixed top bar, outside game area
+    // Draw HUD (Level, Score, Chances) in a simple top bar (restore older version)
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform for HUD
-    if (isMobile()) {
-      // On mobile: single-line HUD bar just below quit button, above gameplay area
-      const hudBarY = 60; // Just below quit button (assumed ~50px)
-      const hudBarHeight = 44; // Compact bar
-      ctx.fillStyle = "rgba(255,255,255,0.97)";
-      ctx.fillRect(0, hudBarY, canvas.width, hudBarHeight);
-      ctx.font = "bold 1.15rem Arial";
-      ctx.fillStyle = "#222";
-      ctx.textBaseline = "middle";
-      ctx.textAlign = "center";
-      // Arrange HUD items horizontally with spacing
-      const items = [
-        `Level: ${levelIndex + 1}/10`,
-        `Score: ${hits * 10}`,
-        `Chances: ${chances}`
-      ];
-      const totalItems = items.length;
-      const sectionWidth = canvas.width / totalItems;
-      for (let i = 0; i < totalItems; i++) {
-        ctx.fillText(items[i], sectionWidth * (i + 0.5), hudBarY + hudBarHeight/2);
-      }
-      ctx.textAlign = "start";
-    } else {
-      // Desktop: horizontal HUD bar at very top
-      ctx.fillStyle = "rgba(255,255,255,0.92)";
-      ctx.fillRect(0, 0, canvas.width, 54); // Professional top bar
-      ctx.font = "bold 22px Arial";
-      ctx.fillStyle = "#222";
-      ctx.textBaseline = "middle";
-      ctx.fillText(`Level: ${levelIndex + 1}/10`, 24, 27);
-      ctx.fillText(`Score: ${hits * 10}`, canvas.width/2 - 50, 27);
-      ctx.fillText(`Chances: ${chances}`, canvas.width - 160, 27);
-    }
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.fillRect(0, 0, canvas.width, 54); // Simple top bar
+    ctx.font = "bold 22px Arial";
+    ctx.fillStyle = "#222";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`Level: ${levelIndex + 1}/10`, 24, 27);
+    ctx.fillText(`Score: ${hits * 10}`, canvas.width/2 - 50, 27);
+    ctx.fillText(`Chances: ${chances}`, canvas.width - 160, 27);
     ctx.restore();
 
     ctx.fillStyle = enemyColor;
@@ -632,11 +607,3 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
-
-
-
-
-
-
-
-
