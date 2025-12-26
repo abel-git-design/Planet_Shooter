@@ -98,8 +98,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // COLORS
   // =====================
   const CONTRAST_MAP = [
-    0.00, 0.50, 0.60, 0.75, 0.90,
-    0.90, 0.90, 0.95, 0.95, 0.95
+    0.00, 0.30, 0.40, 0.50, 0.65,
+    0.75, 0.80, 0.85, 0.90, 0.95
   ];
 
   // =====================
@@ -346,41 +346,41 @@ document.addEventListener("DOMContentLoaded", () => {
       hideShootBtn();
     }
 
-    // Draw HUD (Level, Score, Chances) in a fixed top bar, outside game area
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform for HUD
-    let hudHeight = 54;
-    if (isMobile()) {
-      // Make HUD taller and more separated for mobile, and add a solid background
-      hudHeight = Math.max(64, Math.floor(canvas.height * 0.08));
-      ctx.fillStyle = "#fff";
-      ctx.shadowColor = "#bbb";
-      ctx.shadowBlur = 8;
-      ctx.fillRect(0, 0, canvas.width, hudHeight);
-      ctx.shadowBlur = 0;
-      ctx.font = "bold 24px Arial";
-      ctx.fillStyle = "#1a1a1a";
-      ctx.textBaseline = "middle";
-      ctx.fillText(`Level: ${levelIndex + 1}/10`, 24, hudHeight/2);
-      ctx.fillText(`Score: ${hits * 10}`, canvas.width/2 - 50, hudHeight/2);
-      ctx.fillText(`Chances: ${chances}`, canvas.width - 170, hudHeight/2);
-    } else {
-      ctx.fillStyle = "rgba(255,255,255,0.92)";
-      ctx.fillRect(0, 0, canvas.width, hudHeight);
-      ctx.font = "bold 22px Arial";
-      ctx.fillStyle = "#222";
-      ctx.textBaseline = "middle";
-      ctx.fillText(`Level: ${levelIndex + 1}/10`, 24, hudHeight/2);
-      ctx.fillText(`Score: ${hits * 10}`, canvas.width/2 - 50, hudHeight/2);
-      ctx.fillText(`Chances: ${chances}`, canvas.width - 160, hudHeight/2);
+    if (quitTriggered || gameState === "GAME_QUIT") {
+      drawCleanOverlay();
+      drawCenteredText("GAME QUIT", 44, -10);
+      drawStatsTable();
+      return;
     }
-    ctx.restore();
 
-    // Shift the game area down by the HUD height on mobile
-    if (isMobile()) {
-      ctx.save();
-      let scale = canvas.width / VIRTUAL_WIDTH;
-      ctx.setTransform(scale, 0, 0, scale, 0, hudHeight);
+    if (gameState === "GAME_COMPLETE") {
+      drawCleanOverlay();
+      drawCenteredText("ALL LEVELS", 44, -10);
+      drawCenteredText("COMPLETED", 44, 40);
+      drawStatsTable();
+      return;
+    }
+
+    if (gameState === "COUNTDOWN") {
+      const t = now - stateStartTime;
+      const txt =
+        t < 800 ? "3" :
+        t < 1600 ? "2" :
+        t < 2400 ? "1" :
+        t < 3200 ? "START" : "";
+
+      if (txt) drawCenteredText(txt);
+      else {
+        gameState = "PLAYING";
+        canShoot = true;
+      }
+      return;
+    }
+
+    if (gameState === "LEVEL_END") {
+      drawCleanOverlay();
+      drawCenteredText(endMessage);
+      return;
     }
 
     const lvl = LEVELS[levelIndex];
@@ -390,6 +390,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const ballColor = amblyopiaColor(BASE_BALL_COLOR, BG_COLOR, strength);
 
     enemyAngle = (enemyAngle + (lvl.speed + levelIndex * 0.08)) % 360;
+
+    // Draw HUD (Level, Score, Chances) in a fixed top bar, outside game area
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform for HUD
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.fillRect(0, 0, canvas.width, 54); // Professional top bar
+    ctx.font = "bold 22px Arial";
+    ctx.fillStyle = "#222";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`Level: ${levelIndex + 1}/10`, 24, 27);
+    ctx.fillText(`Score: ${hits * 10}`, canvas.width/2 - 50, 27);
+    ctx.fillText(`Chances: ${chances}`, canvas.width - 160, 27);
+    ctx.restore();
 
     ctx.fillStyle = enemyColor;
     ctx.beginPath();
@@ -431,10 +444,6 @@ document.addEventListener("DOMContentLoaded", () => {
           hits++;
         }
       }
-    }
-
-    if (isMobile()) {
-      ctx.restore(); // Restore after shifting game area
     }
 
     if (chances <= 0) {
