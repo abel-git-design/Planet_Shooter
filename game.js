@@ -98,8 +98,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // COLORS
   // =====================
   const CONTRAST_MAP = [
-    0.00, 0.30, 0.40, 0.50, 0.65,
-    0.75, 0.80, 0.85, 0.90, 0.95
+    0.00, 0.50, 0.60, 0.75, 0.90,
+    0.90, 0.90, 0.95, 0.95, 0.95
   ];
 
   // =====================
@@ -332,8 +332,8 @@ document.addEventListener("DOMContentLoaded", () => {
     gameState = "GAME_QUIT";
   });
 
-  // Make the shooting ball larger
-  const SHOOT_BALL_RADIUS = Math.floor(VIRTUAL_WIDTH * 0.013); // was 7, now ~12 for 900px
+  // Make the shooting ball and preplaced balls the same size
+  const BALL_RADIUS = Math.floor(VIRTUAL_WIDTH * 0.013); // ~12 for 900px
 
   function gameLoop() {
     drawBackground();
@@ -391,6 +391,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     enemyAngle = (enemyAngle + (lvl.speed + levelIndex * 0.08)) % 360;
 
+    // Draw HUD (Level, Score, Chances) in a fixed top bar, outside game area
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform for HUD
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.fillRect(0, 0, canvas.width, 54); // Professional top bar
+    ctx.font = "bold 22px Arial";
+    ctx.fillStyle = "#222";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`Level: ${levelIndex + 1}/10`, 24, 27);
+    ctx.fillText(`Score: ${hits * 10}`, canvas.width/2 - 50, 27);
+    ctx.fillText(`Chances: ${chances}`, canvas.width - 160, 27);
+    ctx.restore();
+
     ctx.fillStyle = enemyColor;
     ctx.beginPath();
     ctx.arc(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2, ENEMY_RADIUS, 0, Math.PI * 2);
@@ -403,21 +416,21 @@ document.addEventListener("DOMContentLoaded", () => {
       ctx.arc(
         VIRTUAL_WIDTH / 2 + Math.cos(r) * ENEMY_RADIUS,
         VIRTUAL_HEIGHT / 2 + Math.sin(r) * ENEMY_RADIUS,
-        7, 0, Math.PI * 2
+        BALL_RADIUS, 0, Math.PI * 2
       );
       ctx.fill();
     });
 
     if (!shooting) {
       ctx.beginPath();
-      ctx.arc(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT - 50, SHOOT_BALL_RADIUS, 0, Math.PI * 2);
+      ctx.arc(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT - 50, BALL_RADIUS, 0, Math.PI * 2);
       ctx.fill();
     }
 
     if (shooting) {
       shotY -= 12;
       ctx.beginPath();
-      ctx.arc(VIRTUAL_WIDTH / 2, shotY, SHOOT_BALL_RADIUS, 0, Math.PI * 2);
+      ctx.arc(VIRTUAL_WIDTH / 2, shotY, BALL_RADIUS, 0, Math.PI * 2);
       ctx.fill();
 
       if (shotY <= VIRTUAL_HEIGHT / 2 + ENEMY_RADIUS) {
@@ -432,12 +445,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
     }
-
-    ctx.fillStyle = "black";
-    ctx.font = "20px Arial";
-    ctx.fillText(`Level: ${levelIndex + 1}/10`, 10, 25);
-    ctx.fillText(`Score: ${hits * 10}`, 10, 50);
-    ctx.fillText(`Chances: ${chances}`, 10, 75);
 
     if (chances <= 0) {
       chancesUsedThisLevel += 3; // Add 3 chances lost for this replay
@@ -600,4 +607,3 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
-
