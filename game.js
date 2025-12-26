@@ -394,14 +394,33 @@ document.addEventListener("DOMContentLoaded", () => {
     // Draw HUD (Level, Score, Chances) in a fixed top bar, outside game area
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform for HUD
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
-    ctx.fillRect(0, 0, canvas.width, 54); // Professional top bar
-    ctx.font = "bold 22px Arial";
-    ctx.fillStyle = "#222";
-    ctx.textBaseline = "middle";
-    ctx.fillText(`Level: ${levelIndex + 1}/10`, 24, 27);
-    ctx.fillText(`Score: ${hits * 10}`, canvas.width/2 - 50, 27);
-    ctx.fillText(`Chances: ${chances}`, canvas.width - 160, 27);
+    if (isMobile()) {
+      // On mobile: stack HUD items vertically, increase bar height, move bar lower to avoid background objects
+      const hudBarHeight = 110;
+      const hudBarY = 18; // Move down from top to avoid background planets
+      ctx.fillStyle = "rgba(255,255,255,0.96)";
+      ctx.fillRect(0, hudBarY, canvas.width, hudBarHeight);
+      ctx.font = "bold 2.1rem Arial";
+      ctx.fillStyle = "#222";
+      ctx.textBaseline = "top";
+      const spacing = 8;
+      const startY = hudBarY + 14;
+      ctx.textAlign = "center";
+      ctx.fillText(`Level: ${levelIndex + 1}/10`, canvas.width/2, startY);
+      ctx.fillText(`Score: ${hits * 10}`, canvas.width/2, startY + 32 + spacing);
+      ctx.fillText(`Chances: ${chances}`, canvas.width/2, startY + 64 + spacing*2);
+      ctx.textAlign = "start";
+    } else {
+      // Desktop: horizontal HUD bar at very top
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.fillRect(0, 0, canvas.width, 54); // Professional top bar
+      ctx.font = "bold 22px Arial";
+      ctx.fillStyle = "#222";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`Level: ${levelIndex + 1}/10`, 24, 27);
+      ctx.fillText(`Score: ${hits * 10}`, canvas.width/2 - 50, 27);
+      ctx.fillText(`Chances: ${chances}`, canvas.width - 160, 27);
+    }
     ctx.restore();
 
     ctx.fillStyle = enemyColor;
