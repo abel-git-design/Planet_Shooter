@@ -3,22 +3,72 @@ document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
 
+  function isMobile() {
+    return /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+  }
+
+  // =====================
+  // SHOOT BUTTON (MOBILE)
+  // =====================
+  let shootBtn = null;
+  function createShootButton() {
+    if (!shootBtn) {
+      shootBtn = document.createElement('button');
+      shootBtn.id = 'shootBtn';
+      shootBtn.textContent = 'Shoot';
+      shootBtn.style.position = 'fixed';
+      shootBtn.style.left = '50%';
+      shootBtn.style.bottom = '8vh';
+      shootBtn.style.transform = 'translateX(-50%)';
+      shootBtn.style.zIndex = '1001';
+      shootBtn.style.padding = '22px 60px';
+      shootBtn.style.fontSize = '2.2rem';
+      shootBtn.style.background = '#27ae60';
+      shootBtn.style.color = '#fff';
+      shootBtn.style.border = 'none';
+      shootBtn.style.borderRadius = '16px';
+      shootBtn.style.boxShadow = '0 2px 12px rgba(0,0,0,0.18)';
+      shootBtn.style.display = 'none';
+      shootBtn.style.userSelect = 'none';
+      shootBtn.style.touchAction = 'manipulation';
+      document.body.appendChild(shootBtn);
+    }
+  }
+  createShootButton();
+
   // =====================
   // VIRTUAL GAME SPACE
   // =====================
-  const VIRTUAL_WIDTH = 800;
-  const VIRTUAL_HEIGHT = 600;
+  let VIRTUAL_WIDTH = 800;
+  let VIRTUAL_HEIGHT = 600;
 
   function resizeCanvas() {
-    const scale = Math.min(
-      window.innerWidth / VIRTUAL_WIDTH,
-      window.innerHeight / VIRTUAL_HEIGHT
-    );
-
-    canvas.width = VIRTUAL_WIDTH * scale;
-    canvas.height = VIRTUAL_HEIGHT * scale;
-
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    let aspect = VIRTUAL_WIDTH / VIRTUAL_HEIGHT;
+    let w = window.innerWidth;
+    let h = window.innerHeight;
+    if (isMobile()) {
+      let scale = Math.min(w * 0.98 / VIRTUAL_WIDTH, h * 0.80 / VIRTUAL_HEIGHT);
+      canvas.width = VIRTUAL_WIDTH * scale;
+      canvas.height = VIRTUAL_HEIGHT * scale;
+      canvas.style.position = 'absolute';
+      canvas.style.left = '50%';
+      canvas.style.top = '50%';
+      canvas.style.transform = 'translate(-50%, -50%)';
+      canvas.style.maxWidth = '98vw';
+      canvas.style.maxHeight = '80vh';
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    } else {
+      let scale = Math.min(w / VIRTUAL_WIDTH, h / VIRTUAL_HEIGHT);
+      canvas.width = VIRTUAL_WIDTH * scale;
+      canvas.height = VIRTUAL_HEIGHT * scale;
+      canvas.style.position = 'absolute';
+      canvas.style.left = '50%';
+      canvas.style.top = '50%';
+      canvas.style.transform = 'translate(-50%, -50%)';
+      canvas.style.maxWidth = '100vw';
+      canvas.style.maxHeight = '100vh';
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    }
   }
 
   resizeCanvas();
@@ -204,7 +254,32 @@ document.addEventListener("DOMContentLoaded", () => {
   }, { passive:false });
 
   // =====================
-  // GAME LOOP (UPDATED)
+  // INPUT (MOBILE) - USE SHOOT BUTTON
+  // =====================
+  function showShootBtn() {
+    if (shootBtn) shootBtn.style.display = 'block';
+  }
+  function hideShootBtn() {
+    if (shootBtn) shootBtn.style.display = 'none';
+  }
+  if (shootBtn) {
+    shootBtn.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      if (canShoot && !shooting && gameState === "PLAYING") {
+        shooting = true;
+        shotY = VIRTUAL_HEIGHT - 50;
+      }
+    }, { passive: false });
+    shootBtn.addEventListener('click', function(e) {
+      if (canShoot && !shooting && gameState === "PLAYING") {
+        shooting = true;
+        shotY = VIRTUAL_HEIGHT - 50;
+      }
+    });
+  }
+
+  // =====================
+  // GAME LOOP (UPDATED FOR MOBILE BUTTON)
   // =====================
   let quitTriggered = false;
   let userInfo = { name: "", age: "", sex: "", gamer: "" };
@@ -265,6 +340,13 @@ document.addEventListener("DOMContentLoaded", () => {
   function gameLoop() {
     drawBackground();
     const now = performance.now();
+
+    // Show/hide shoot button for mobile
+    if (isMobile() && gameState === "PLAYING") {
+      showShootBtn();
+    } else {
+      hideShootBtn();
+    }
 
     if (quitTriggered || gameState === "GAME_QUIT") {
       drawCleanOverlay();
@@ -520,4 +602,3 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
-
