@@ -63,15 +63,17 @@ document.addEventListener("DOMContentLoaded", () => {
     let w = window.innerWidth;
     let h = window.innerHeight;
     if (isMobile()) {
-      let scale = Math.min(w * 0.98 / VIRTUAL_WIDTH, h * 0.98 / VIRTUAL_HEIGHT);
+      // Use the smallest dimension for a perfect square fit, minus a small margin
+      let minDim = Math.min(w, h);
+      let scale = (minDim * 0.995) / VIRTUAL_WIDTH; // 99.5% of min dimension
       canvas.width = VIRTUAL_WIDTH * scale;
       canvas.height = VIRTUAL_HEIGHT * scale;
       canvas.style.position = 'absolute';
       canvas.style.left = '50%';
       canvas.style.top = '50%';
       canvas.style.transform = 'translate(-50%, -50%)';
-      canvas.style.maxWidth = '98vw';
-      canvas.style.maxHeight = '98vh';
+      canvas.style.maxWidth = '99vw';
+      canvas.style.maxHeight = '99vh';
       ctx.setTransform(scale, 0, 0, scale, 0, 0);
     } else {
       let scale = Math.min(w / VIRTUAL_WIDTH, h / VIRTUAL_HEIGHT);
