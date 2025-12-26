@@ -404,7 +404,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ctx.fillStyle = "#222";
       ctx.textBaseline = "top";
       const spacing = 4;
-      const startY = hudBarY + 14;
+      const startY = hudBarY + 5;
       ctx.textAlign = "center";
       ctx.fillText(`Level: ${levelIndex + 1}/10`, canvas.width/2, startY);
       ctx.fillText(`Score: ${hits * 10}`, canvas.width/2, startY + 32 + spacing);
@@ -626,6 +626,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
+
 
 
 
