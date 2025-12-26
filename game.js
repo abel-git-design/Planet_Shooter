@@ -39,15 +39,31 @@ document.addEventListener("DOMContentLoaded", () => {
   // =====================
   // VIRTUAL GAME SPACE
   // =====================
-  let VIRTUAL_WIDTH = 800;
-  let VIRTUAL_HEIGHT = 600;
+  let VIRTUAL_WIDTH = 900;
+  let VIRTUAL_HEIGHT = 900;
+
+  const ENEMY_RADIUS = Math.floor(VIRTUAL_WIDTH * 0.18); // ~160px for 900px
+  const PLANET_LIGHT = "rgb(230,230,230)";
+  const PLANET_DARK = "rgb(20,20,20)";
+  const BG_COLOR = [120,120,120];
+  const BASE_ENEMY_COLOR = [150,150,150];
+  const BASE_BALL_COLOR = [200,200,200];
+
+  const bgPlanets = [
+    [VIRTUAL_WIDTH*0.13,VIRTUAL_HEIGHT*0.13,Math.floor(VIRTUAL_WIDTH*0.06),PLANET_LIGHT],
+    [VIRTUAL_WIDTH*0.87,VIRTUAL_HEIGHT*0.13,Math.floor(VIRTUAL_WIDTH*0.055),PLANET_DARK],
+    [VIRTUAL_WIDTH*0.13,VIRTUAL_HEIGHT*0.87,Math.floor(VIRTUAL_WIDTH*0.045),PLANET_DARK],
+    [VIRTUAL_WIDTH*0.87,VIRTUAL_HEIGHT*0.87,Math.floor(VIRTUAL_WIDTH*0.07),PLANET_LIGHT],
+    [VIRTUAL_WIDTH*0.10,VIRTUAL_HEIGHT*0.5,Math.floor(VIRTUAL_WIDTH*0.04),PLANET_LIGHT],
+    [VIRTUAL_WIDTH*0.90,VIRTUAL_HEIGHT*0.5,Math.floor(VIRTUAL_WIDTH*0.04),PLANET_DARK]
+  ];
 
   function resizeCanvas() {
     let aspect = VIRTUAL_WIDTH / VIRTUAL_HEIGHT;
     let w = window.innerWidth;
     let h = window.innerHeight;
     if (isMobile()) {
-      let scale = Math.min(w * 0.98 / VIRTUAL_WIDTH, h * 0.80 / VIRTUAL_HEIGHT);
+      let scale = Math.min(w * 0.98 / VIRTUAL_WIDTH, h * 0.98 / VIRTUAL_HEIGHT);
       canvas.width = VIRTUAL_WIDTH * scale;
       canvas.height = VIRTUAL_HEIGHT * scale;
       canvas.style.position = 'absolute';
@@ -55,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
       canvas.style.top = '50%';
       canvas.style.transform = 'translate(-50%, -50%)';
       canvas.style.maxWidth = '98vw';
-      canvas.style.maxHeight = '80vh';
+      canvas.style.maxHeight = '98vh';
       ctx.setTransform(scale, 0, 0, scale, 0, 0);
     } else {
       let scale = Math.min(w / VIRTUAL_WIDTH, h / VIRTUAL_HEIGHT);
@@ -79,17 +95,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // =====================
   // COLORS
   // =====================
-  const BG_COLOR = [120,120,120];
-  const PLANET_LIGHT = "rgb(230,230,230)";
-  const PLANET_DARK = "rgb(20,20,20)";
-  const BASE_ENEMY_COLOR = [150,150,150];
-  const BASE_BALL_COLOR = [200,200,200];
-
-  const ENEMY_RADIUS = 100;
-
-  // =====================
-  // CONTRAST MAP
-  // =====================
   const CONTRAST_MAP = [
     0.00, 0.30, 0.40, 0.50, 0.65,
     0.75, 0.80, 0.85, 0.90, 0.95
@@ -109,18 +114,6 @@ document.addEventListener("DOMContentLoaded", () => {
     {speed:1.0, balls:4, hits:7},
     {speed:1.0, balls:4, hits:7},
     {speed:1.0, balls:4, hits:7}
-  ];
-
-  // =====================
-  // BACKGROUND PLANETS
-  // =====================
-  const bgPlanets = [
-    [120,120,45,PLANET_LIGHT],
-    [680,120,40,PLANET_DARK],
-    [120,480,35,PLANET_DARK],
-    [680,480,50,PLANET_LIGHT],
-    [90,300,30,PLANET_LIGHT],
-    [710,300,30,PLANET_DARK]
   ];
 
   // =====================
@@ -551,8 +544,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("shareBtn").addEventListener("click", async function() {
     // Capture the entire stats table area as an image, accounting for canvas scaling
     const canvas = document.getElementById("gameCanvas");
-    const VIRTUAL_WIDTH = 800;
-    const VIRTUAL_HEIGHT = 600;
+    const VIRTUAL_WIDTH = 900;
+    const VIRTUAL_HEIGHT = 900;
     const tableX = 50, tableY = 50, tableWidth = VIRTUAL_WIDTH - 100, tableHeight = VIRTUAL_HEIGHT - 100;
 
     // Calculate the scale between the actual canvas size and the virtual size
