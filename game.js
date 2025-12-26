@@ -346,6 +346,33 @@ document.addEventListener("DOMContentLoaded", () => {
       hideShootBtn();
     }
 
+    // Draw HUD (Level, Score, Chances)
+    if (isMobile()) {
+      // Old-style HUD for mobile: simple text at corners
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform for HUD
+      ctx.font = "bold 22px Arial";
+      ctx.fillStyle = "#222";
+      ctx.textBaseline = "top";
+      ctx.fillText(`Level: ${levelIndex + 1}/10`, 18, 10);
+      ctx.fillText(`Score: ${hits * 10}`, VIRTUAL_WIDTH / 2 - 40, 10);
+      ctx.fillText(`Chances: ${chances}`, VIRTUAL_WIDTH - 160, 10);
+      ctx.restore();
+    } else {
+      // New HUD bar for desktop
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform for HUD
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.fillRect(0, 0, canvas.width, 54); // Simple top bar
+      ctx.font = "bold 22px Arial";
+      ctx.fillStyle = "#222";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`Level: ${levelIndex + 1}/10`, 24, 27);
+      ctx.fillText(`Score: ${hits * 10}`, canvas.width/2 - 50, 27);
+      ctx.fillText(`Chances: ${chances}`, canvas.width - 160, 27);
+      ctx.restore();
+    }
+
     if (quitTriggered || gameState === "GAME_QUIT") {
       drawCleanOverlay();
       drawCenteredText("GAME QUIT", 44, -10);
@@ -390,19 +417,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const ballColor = amblyopiaColor(BASE_BALL_COLOR, BG_COLOR, strength);
 
     enemyAngle = (enemyAngle + (lvl.speed + levelIndex * 0.08)) % 360;
-
-    // Draw HUD (Level, Score, Chances) in a simple top bar (restore older version)
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform for HUD
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
-    ctx.fillRect(0, 0, canvas.width, 54); // Simple top bar
-    ctx.font = "bold 22px Arial";
-    ctx.fillStyle = "#222";
-    ctx.textBaseline = "middle";
-    ctx.fillText(`Level: ${levelIndex + 1}/10`, 24, 27);
-    ctx.fillText(`Score: ${hits * 10}`, canvas.width/2 - 50, 27);
-    ctx.fillText(`Chances: ${chances}`, canvas.width - 160, 27);
-    ctx.restore();
 
     ctx.fillStyle = enemyColor;
     ctx.beginPath();
