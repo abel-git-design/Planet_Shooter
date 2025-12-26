@@ -400,10 +400,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const hudBarY = 18; // Move down from top to avoid background planets
       ctx.fillStyle = "rgba(255,255,255,0.96)";
       ctx.fillRect(0, hudBarY, canvas.width, hudBarHeight);
-      ctx.font = "bold 4.1rem Arial";
+      ctx.font = "bold 6.1rem Arial";
       ctx.fillStyle = "#222";
       ctx.textBaseline = "top";
-      const spacing = 8;
+      const spacing = 4;
       const startY = hudBarY + 14;
       ctx.textAlign = "center";
       ctx.fillText(`Level: ${levelIndex + 1}/10`, canvas.width/2, startY);
@@ -626,6 +626,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
+
 
 
 
