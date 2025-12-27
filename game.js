@@ -98,8 +98,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // COLORS
   // =====================
   const CONTRAST_MAP = [
-    0.00, 0.30, 0.40, 0.50, 0.65,
-    0.75, 0.80, 0.85, 0.90, 0.95
+    0.00, 0.40, 0.50, 0.70, 0.85,
+    0.85, 0.90, 0.90, 0.95, 0.95
   ];
 
   // =====================
@@ -621,3 +621,4 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
+
